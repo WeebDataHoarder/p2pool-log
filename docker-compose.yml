@@ -1,0 +1,83 @@
+version: "2.2"
+
+networks:
+  p2pool-log:
+    external: false
+
+volumes:
+  db:
+    external: false
+
+services:
+  scraper:
+    build:
+      context: docker/php
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      - db
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./:/app:ro
+      - "${API_FOLDER}:/api:ro"
+    tmpfs:
+      - /tmp
+    networks:
+      - p2pool-log
+    command: >-
+      php /app/src/daemon.php "host=db port=5432 dbname=p2pool user=p2pool password=p2pool"
+  bot:
+    build:
+      context: docker/php
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - IRC_SERVER_HOST=${IRC_SERVER_HOST}
+      - IRC_SERVER_PORT=${IRC_SERVER_PORT}
+      - IRC_SERVER_PASS=${IRC_SERVER_PASS}
+      - BOT_USER=${BOT_USER}
+      - BOT_NICK=${BOT_NICK}
+      - BOT_PASSWORD=${BOT_PASSWORD}
+      - BOT_COMMANDS_CHANNEL=${BOT_COMMANDS_CHANNEL}
+      - BOT_BLOCKS_FOUND_CHANNEL=${BOT_BLOCKS_FOUND_CHANNEL}
+    restart: always
+    depends_on:
+      - db
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./:/app:ro
+    tmpfs:
+      - /tmp
+    networks:
+      - p2pool-log
+    command: >-
+      php /app/src/bot.php "host=db port=5432 dbname=p2pool user=p2pool password=p2pool"
+  db:
+    image: postgres:13.4
+    restart: always
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - POSTGRES_USER=p2pool
+      - POSTGRES_PASSWORD=p2pool
+      - POSTGRES_DB=p2pool
+    networks:
+      - p2pool-log
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready --dbname \"postgres://p2pool:p2pool@db/p2pool\"" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - db:/var/lib/postgresql/data:rw
+    tmpfs:
+      # For read-only filesystem, need to create a volume/tmpfs for PostgreSQL to run its much
+      # needed configuration. The read-only flag does not make volumes and tmpfs read-only.
+      - /tmp
+      - /run
+      - /run/postgresql

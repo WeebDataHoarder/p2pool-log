@@ -1,0 +1,17 @@
+{
+  "name": "weebdatahoarder/p2pool-log",
+  "type": "project",
+  "require": {
+    "php" : ">=7.4",
+    "ext-pgsql": "*",
+    "ext-json": "*",
+    "monero-integrations/monerophp": "dev-master"
+  },
+  "autoload": {
+    "psr-4": {
+      "p2pool\\": "src/"
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}
