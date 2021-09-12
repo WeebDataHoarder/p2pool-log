@@ -92,7 +92,7 @@ class Database{
         $result = pg_query_params($this->db, 'SELECT * FROM blocks '.$where.';', $params);
 
         while(($res = pg_fetch_assoc($result)) !== false){
-            yield new Block($res["id"], $res["height"], $res["previous_id"], $res["main_height"], $res["main_hash"], $res["difficulty"], $res["pow_hash"], $res["timestamp"], $res["miner"], $res["tx_id"], $res["tx_privkey"], $res["main_found"] === "y");
+            yield new Block($res["id"], $res["height"], $res["previous_id"], $res["main_height"], $res["main_hash"], $res["difficulty"], $res["pow_hash"], $res["timestamp"], $res["miner"], $res["tx_id"], $res["tx_privkey"], $res["main_found"] === "t");
         }
     }
 
@@ -141,7 +141,7 @@ class Database{
         }
 
         return pg_query_params($this->db, "INSERT INTO blocks (id, height, previous_id, main_height, main_hash, difficulty, pow_hash, timestamp, miner, tx_id, tx_privkey, main_found) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)", [
-           $b->getId(), $b->getHeight(), $b->getPreviousId(), $b->getMainHeight(), $b->getMainHash(), $b->getDifficulty(), $b->getPowHash(), $b->getTimestamp(), $b->getMiner(), $b->getTxId(), $b->getTxPrivkey(), $b->isMainFound() ? "true" : "false"
+           $b->getId(), $b->getHeight(), $b->getPreviousId(), $b->getMainHeight(), $b->getMainHash(), $b->getDifficulty(), $b->getPowHash(), $b->getTimestamp(), $b->getMiner(), $b->getTxId(), $b->getTxPrivkey(), $b->isMainFound() ? "t" : "f"
         ]) !== false;
     }
 
