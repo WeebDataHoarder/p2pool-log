@@ -172,7 +172,7 @@ class Database{
      * @return \Iterator|Block[]
      */
     public function getFound(int $limit = null) : \Iterator {
-        return iterator_to_array($this->getBlocksByQuery("WHERE main_found = 'y' ORDER BY main_height DESC" . ($limit !== null ? "LIMIT $limit" : "")))[0] ?? null;
+        return iterator_to_array($this->getBlocksByQuery("WHERE main_found = 'y' ORDER BY main_height DESC" . ($limit !== null ? " LIMIT $limit" : "")))[0] ?? null;
     }
 
     public function getBlockById(string $id) : ?Block {
