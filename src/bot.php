@@ -148,7 +148,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 foreach ($subs as $sub){
                     $result = getShareWindowPosition($sub->getMiner());
                     if($total === null){
-                        $result = $total;
+                        $total = $result;
                     }else{
                         foreach ($total[0] as $i => $v){
                             $total[0][$i] += $result[0][$i];
