@@ -185,7 +185,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
 
                             $total = bcdiv((string) $total, "1000000000000", 12);
 
-                            sendIRCMessage("Your last payout was $total XMR on block ".$block->getMainHeight()." :: https://xmrchain.net/block/".$block->getMainHeight()." :: Tx private key ".$block->getTxPrivkey()." :: https://xmrchain.net/tx/".$block->getTxId(), $answer);
+                            sendIRCMessage("Your last payout was ". FORMAT_COLOR_ORANGE . FORMAT_BOLD . $total . " XMR".FORMAT_RESET." on block ". FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET ." :: https://xmrchain.net/block/".$block->getMainHeight()." :: Tx private key ". FORMAT_ITALIC . $block->getTxPrivkey() . FORMAT_RESET ." :: https://xmrchain.net/tx/".$block->getTxId(), $answer);
                             return;
                         }
                     }
