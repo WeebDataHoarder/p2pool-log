@@ -145,8 +145,13 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
 
                 $subs = $database->getSubscriptionsFromNick($originalSender["user"]);
                 $total = null;
+
+                $payouts = getWindowPayouts();
+                $myReward = 0;
+
                 foreach ($subs as $sub){
                     $result = getShareWindowPosition($sub->getMiner());
+                    $myReward += $payouts[$sub->getMiner()] ?? 0;
                     if($total === null){
                         $total = $result;
                     }else{
@@ -167,7 +172,10 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 $share_count = array_sum($total[0]);
                 $uncle_count = array_sum($total[1]);
 
-                $m = "Your shares $share_count (+$uncle_count uncles)";
+                $myReward = (string) round(($myReward / array_sum($payouts)) * 100, 3);
+
+
+                $m = "Your shares $share_count (+$uncle_count uncles) $myReward%";
 
                 if($share_count > 0){
                     $m .= " :: Shares position [";
@@ -209,7 +217,7 @@ function shortenAddress(string $address) : string {
     return substr($address, 0, 10) . "..." . substr($address, -10);
 }
 
-function blockFoundMessage(Block $b){
+function getWindowPayouts(): array {
     global $database;
 
     $payouts = [];
@@ -230,6 +238,12 @@ function blockFoundMessage(Block $b){
             $payouts[$block->getMiner()] += SIDECHAIN_UNCLE_PENALTY;
         }
     }
+
+    return $payouts;
+}
+
+function blockFoundMessage(Block $b){
+    $payouts = getWindowPayouts();
 
     sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "BLOCK FOUND:" . FORMAT_RESET . " MainChain height " . FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " :: SideChain height ". $b->getHeight() ." :: https://xmrchain.net/block/" . $b->getMainHeight() . " :: Total of ".count($payouts)." miners paid :: Hash " . FORMAT_ITALIC . $b->getMainHash(), BOT_BLOCKS_FOUND_CHANNEL);
     sendIRCMessage("Verify payouts using Tx private key " . FORMAT_ITALIC . $b->getTxPrivkey() . FORMAT_RESET . " :: Payout transaction for block ". FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " https://xmrchain.net/tx/".$b->getTxId()."", BOT_BLOCKS_FOUND_CHANNEL);
@@ -259,18 +273,24 @@ function getShareWindowPosition(int $miner, int $count = 30): array {
 
 function shareFoundMessage(Block $b, Subscription $sub, Miner $miner, array $uncles = []){
     $positions = getShareWindowPosition($miner->getId());
+    $payouts = getWindowPayouts();
+
+    $myReward = (string) round((($payouts[$miner->getId()] ?? 0) / array_sum($payouts)) * 100, 3);
 
     $share_count = array_sum($positions[0]);
     $uncle_count = array_sum($positions[1]);
-    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "SHARE FOUND:" . FORMAT_RESET . " SideChain height " . FORMAT_COLOR_RED . $b->getHeight() . FORMAT_RESET . " ".(count($uncles) > 0 ? ":: Includes " . count($uncles) . " uncle(s) " : "").($b->isMainFound() ? ":: ".FORMAT_BOLD. FORMAT_COLOR_LIGHT_GREEN ." MINED MAINCHAN BLOCK " . $b->getMainHeight() . FORMAT_RESET . " " : "").":: Your shares $share_count (+$uncle_count uncles) :: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
+    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "SHARE FOUND:" . FORMAT_RESET . " SideChain height " . FORMAT_COLOR_RED . $b->getHeight() . FORMAT_RESET . " ".(count($uncles) > 0 ? ":: Includes " . count($uncles) . " uncle(s) " : "").($b->isMainFound() ? ":: ".FORMAT_BOLD. FORMAT_COLOR_LIGHT_GREEN ." MINED MAINCHAN BLOCK " . $b->getMainHeight() . FORMAT_RESET . " " : "").":: Your shares $share_count (+$uncle_count uncles) $myReward% :: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
 }
 
 function uncleFoundMessage(UncleBlock $b, Subscription $sub, Miner $miner){
     $positions = getShareWindowPosition($miner->getId());
+    $payouts = getWindowPayouts();
+
+    $myReward = (string) round((($payouts[$miner->getId()] ?? 0) / array_sum($payouts)) * 100, 3);
 
     $share_count = array_sum($positions[0]);
     $uncle_count = array_sum($positions[1]);
-    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "UNCLE SHARE FOUND:" . FORMAT_RESET . " SideChain height " . FORMAT_COLOR_RED . $b->getParentHeight() . FORMAT_RESET . " :: Accounted for ".(100 - SIDECHAIN_UNCLE_PENALTY)."% of value :: Your shares $share_count (+$uncle_count uncles) :: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
+    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "UNCLE SHARE FOUND:" . FORMAT_RESET . " SideChain height " . FORMAT_COLOR_RED . $b->getParentHeight() . FORMAT_RESET . " :: Accounted for ".(100 - SIDECHAIN_UNCLE_PENALTY)."% of value :: Your shares $share_count (+$uncle_count uncles) $myReward% :: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
 }
 
 $lastTip = null;
