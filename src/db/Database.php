@@ -135,13 +135,13 @@ class Database{
         $block = $this->getBlockById($b->getId());
         if($block !== null){ //Update found status if existent
             if($b->isMainFound() and !$block->isMainFound()){
-                pg_query_params($this->db, "UPDATE blocks SET main_found = true WHERE id = $1;", [$block->getId()]);
+                pg_query_params($this->db, "UPDATE blocks SET main_found = 'y' WHERE id = $1;", [$block->getId()]);
             }
             return true;
         }
 
         return pg_query_params($this->db, "INSERT INTO blocks (id, height, previous_id, main_height, main_hash, difficulty, pow_hash, timestamp, miner, tx_id, tx_privkey, main_found) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)", [
-           $b->getId(), $b->getHeight(), $b->getPreviousId(), $b->getMainHeight(), $b->getMainHash(), $b->getDifficulty(), $b->getPowHash(), $b->getTimestamp(), $b->getMiner(), $b->getTxId(), $b->getTxPrivkey(), $b->isMainFound() ? "t" : "f"
+           $b->getId(), $b->getHeight(), $b->getPreviousId(), $b->getMainHeight(), $b->getMainHash(), $b->getDifficulty(), $b->getPowHash(), $b->getTimestamp(), $b->getMiner(), $b->getTxId(), $b->getTxPrivkey(), $b->isMainFound() ? "y" : "n"
         ]) !== false;
     }
 
@@ -225,7 +225,7 @@ class Database{
      * @return \Iterator|UncleBlock[]
      */
     public function getUnclesInWindow() : \Iterator {
-        return $this->getBlocksByQuery('WHERE parent_height > ((SELECT MAX(blocks.height) FROM blocks) - $1)', [SIDECHAIN_PPLNS_WINDOW]);
+        return $this->getUncleBlocksByQuery('WHERE parent_height > ((SELECT MAX(blocks.height) FROM blocks) - $1)', [SIDECHAIN_PPLNS_WINDOW]);
     }
 
     /**
@@ -233,7 +233,7 @@ class Database{
      * @return \Iterator|UncleBlock[]
      */
     public function getUnclesByMinerIdInWindow(int $miner) : \Iterator {
-        return $this->getBlocksByQuery('WHERE parent_height > ((SELECT MAX(blocks.height) FROM blocks) - $1) AND miner = $2', [SIDECHAIN_PPLNS_WINDOW, $miner]);
+        return $this->getUncleBlocksByQuery('WHERE parent_height > ((SELECT MAX(blocks.height) FROM blocks) - $1) AND miner = $2', [SIDECHAIN_PPLNS_WINDOW, $miner]);
     }
 }
 

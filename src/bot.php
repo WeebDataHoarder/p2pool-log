@@ -107,7 +107,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 }
 
                 $miner = $database->getOrCreateMinerByAddress($maddress->getAddress());
-                $sub = new Subscription($miner->getId(), $to);
+                $sub = new Subscription($miner->getId(), $originalSender["user"]);
                 $database->addSubscription($sub);
                 sendIRCMessage("Subscribed your nick to shares found by " . FORMAT_ITALIC . shortenAddress($maddress->getAddress()), $answer);
             },
@@ -137,14 +137,21 @@ function shortenAddress(string $address) : string {
 function blockFoundMessage(Block $b){
     sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "BLOCK FOUND:" . FORMAT_RESET . " MainChain height " . FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " :: SideChain height ". $b->getHeight() ." :: https://xmrchain.net/block/" . $b->getMainHeight() . " :: Hash " . FORMAT_ITALIC . $b->getMainHash(), BOT_BLOCKS_FOUND_CHANNEL);
     sendIRCMessage("Verify payouts using Tx private key " . FORMAT_ITALIC . $b->getTxPrivkey() . FORMAT_RESET . " :: Payout transaction for block ". FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " https://xmrchain.net/tx/".$b->getTxId()."", BOT_BLOCKS_FOUND_CHANNEL);
+    sleep(1);
 }
 
 function shareFoundMessage(Block $b, Subscription $sub, Miner $miner, array $uncles = []){
-    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "SHARE FOUND:" . FORMAT_RESET . " SideChain height " . FORMAT_COLOR_RED . $b->getHeight() . FORMAT_RESET . " ".(count($uncles) > 0 ? ":: Includes " . count($uncles) . " uncle(s) " : "").($b->isMainFound() ? ":: ".FORMAT_BOLD. FORMAT_COLOR_LIGHT_GREEN ." MINED MAINCHAN BLOCK " . $b->getMainHeight() . FORMAT_RESET . " " : "").":: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
+    global $database;
+    $share_count = count(iterator_to_array($database->getBlocksByMinerIdInWindow($miner->getId())));
+    $uncle_count = count(iterator_to_array($database->getUnclesByMinerIdInWindow($miner->getId())));
+    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "SHARE FOUND:" . FORMAT_RESET . " SideChain height " . FORMAT_COLOR_RED . $b->getHeight() . FORMAT_RESET . " ".(count($uncles) > 0 ? ":: Includes " . count($uncles) . " uncle(s) " : "").($b->isMainFound() ? ":: ".FORMAT_BOLD. FORMAT_COLOR_LIGHT_GREEN ." MINED MAINCHAN BLOCK " . $b->getMainHeight() . FORMAT_RESET . " " : "").":: Your shares $share_count (+$uncle_count uncles) :: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
 }
 
 function uncleFoundMessage(UncleBlock $b, Subscription $sub, Miner $miner){
-    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "UNCLE SHARE INCLUDED:" . FORMAT_RESET . " SideChain height " . FORMAT_COLOR_RED . $b->getParentHeight() . FORMAT_RESET . " :: Accounted for ".(100 - SIDECHAIN_UNCLE_PENALTY)."% of value :: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
+    global $database;
+    $share_count = count(iterator_to_array($database->getBlocksByMinerIdInWindow($miner->getId())));
+    $uncle_count = count(iterator_to_array($database->getUnclesByMinerIdInWindow($miner->getId())));
+    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "UNCLE SHARE FOUND:" . FORMAT_RESET . " SideChain height " . FORMAT_COLOR_RED . $b->getParentHeight() . FORMAT_RESET . " :: Accounted for ".(100 - SIDECHAIN_UNCLE_PENALTY)."% of value :: Your shares $share_count (+$uncle_count uncles) :: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
 }
 
 $lastTip = null;

@@ -46,7 +46,7 @@ function get_block_from_disk(int $index, array &$uncles = []) : Block {
     }
 
 
-    $block = new Block($data["id"], (int) $data["height"], $data["prev_hash"], (int) $data["mheight"], $data["mhash"], (int) $data["diff"], $data["pow_hash"], (int) $data["ts"], $miner->getId(), $data["tx_coinbase"], $data["tx_priv"], (isset($data["main_found"]) and $data["main_found"] === "true"));
+    $block = new Block($data["id"], (int) $data["height"], $data["prev_hash"], (int) $data["mheight"], $data["mhash"], (int) $data["diff"], $data["pow_hash"], (int) $data["ts"], $miner->getId(), $data["tx_coinbase"], $data["tx_priv"], (isset($data["block_found"]) and $data["block_found"] === "true"));
 
     if(isset($data["uncles"])){
         foreach ($data["uncles"] as $uncle){
