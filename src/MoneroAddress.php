@@ -12,6 +12,8 @@ class MoneroAddress{
     private int $net;
     private string $checksum;
 
+    private $derivation = null;
+
     public function __construct(string $address){
         $b58 = new base58();
         $b = $b58->decode($address);
@@ -32,6 +34,14 @@ class MoneroAddress{
     public function getAddress() : string {
         $b58 = new base58();
         return $b58->encode(dechex($this->net) . $this->spend_pub . $this->view_pub . $this->checksum);
+    }
+
+    public function getEphemeralPublicKey(string $tx_privkey, int $output_index) : string {
+        $cn = new Cryptonote();
+        if($this->derivation === null or $this->derivation[0] !== $tx_privkey){
+            $this->derivation = [$tx_privkey, $cn->gen_key_derivation($this->view_pub, $tx_privkey)];
+        }
+        return $cn->derive_public_key($this->derivation[1], $output_index, $this->spend_pub);
     }
 
     public function getSpendPub() : string {

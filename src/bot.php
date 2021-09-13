@@ -139,6 +139,49 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
         [
             "targets" => [BOT_NICK, BOT_COMMANDS_CHANNEL],
             "permission" => PERMISSION_NONE,
+            "match" => "#^\\.payout[ \t]*#iu",
+            "command" => function($originalSender, $answer, $to, $matches){
+                global $database;
+
+                $subs = $database->getSubscriptionsFromNick($originalSender["user"]);
+
+                if($subs === null){
+                    sendIRCMessage("No known subscriptions to your nick.", $answer);
+                    return;
+                }
+
+                $foundBlocks = $database->getFound(60);
+
+
+                $miners = [];
+                foreach ($subs as $sub) {
+                    $miners[] = $database->getMiner($sub->getMiner());
+                }
+
+                foreach ($foundBlocks as $block){
+                    $o = CoinbaseTransactionOutputs::fromTransactionId($block->getTxId());
+                    if($o !== null){
+                        $outputs = $o->matchOutputs($miners, $block->getTxPrivkey());
+                        if(count($outputs) > 0){
+                            $total = 0;
+                            foreach ($outputs as $output){
+                                $total += $output->amount;
+                            }
+
+                            $total = bcdiv((string) $total, "1000000000000", 12);
+
+                            sendIRCMessage("Last pool payout $total XMR on block ".$block->getMainHeight()." :: https://xmrchain.net/block/".$block->getMainHeight()." :: Tx private key ".$block->getTxPrivkey()." :: https://xmrchain.net/tx/".$block->getTxId(), $to);
+                        }
+                    }
+                }
+
+
+                sendIRCMessage("No known payouts to your subscriptions in the last ".count($foundBlocks)." mined blocks.", $answer);
+            },
+        ],
+        [
+            "targets" => [BOT_NICK, BOT_COMMANDS_CHANNEL],
+            "permission" => PERMISSION_NONE,
             "match" => "#^\\.(status)[ \t]*#iu",
             "command" => function($originalSender, $answer, $to, $matches){
                 global $database;
@@ -217,18 +260,18 @@ function shortenAddress(string $address) : string {
     return substr($address, 0, 10) . "..." . substr($address, -10);
 }
 
-function getWindowPayouts(): array {
+function getWindowPayouts(int $startBlock = null): array {
     global $database;
 
     $payouts = [];
 
-    foreach($database->getBlocksInWindow() as $block){
+    foreach($database->getBlocksInWindow($startBlock) as $block){
         if(!isset($payouts[$block->getMiner()])){
             $payouts[$block->getMiner()] = 0;
         }
         $payouts[$block->getMiner()] += 100;
     }
-    foreach($database->getUnclesInWindow() as $uncle){
+    foreach($database->getUnclesInWindow($startBlock) as $uncle){
         if(!isset($payouts[$uncle->getMiner()])){
             $payouts[$uncle->getMiner()] = 0;
         }
@@ -245,7 +288,7 @@ function getWindowPayouts(): array {
 function blockFoundMessage(Block $b){
     $payouts = getWindowPayouts();
 
-    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "BLOCK FOUND:" . FORMAT_RESET . " MainChain height " . FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " :: SideChain height ". $b->getHeight() ." :: https://xmrchain.net/block/" . $b->getMainHeight() . " :: Total of ".count($payouts)." miners paid :: Hash " . FORMAT_ITALIC . $b->getMainHash(), BOT_BLOCKS_FOUND_CHANNEL);
+    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "BLOCK FOUND:" . FORMAT_RESET . " MainChain height " . FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " :: SideChain height ". $b->getHeight() ." :: https://xmrchain.net/block/" . $b->getMainHeight() . " ::  ".FORMAT_COLOR_ORANGE . count($payouts)." miners paid" . FORMAT_RESET . " :: Hash " . FORMAT_ITALIC . $b->getMainHash(), BOT_BLOCKS_FOUND_CHANNEL);
     sendIRCMessage("Verify payouts using Tx private key " . FORMAT_ITALIC . $b->getTxPrivkey() . FORMAT_RESET . " :: Payout transaction for block ". FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " https://xmrchain.net/tx/".$b->getTxId()."", BOT_BLOCKS_FOUND_CHANNEL);
     sleep(1);
 }

@@ -5,7 +5,9 @@
     "php" : ">=7.4",
     "ext-pgsql": "*",
     "ext-json": "*",
-    "monero-integrations/monerophp": "dev-master"
+    "monero-integrations/monerophp": "dev-master",
+    "ext-curl": "*",
+    "ext-bcmath": "*"
   },
   "autoload": {
     "psr-4": {

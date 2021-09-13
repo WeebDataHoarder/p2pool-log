@@ -14,6 +14,8 @@ services:
       context: docker/php
       dockerfile: Dockerfile
     restart: always
+    environment:
+      - MONEROD_RPC_URL=${MONEROD_RPC_URL}
     depends_on:
       - db
     read_only: true
@@ -42,7 +44,7 @@ services:
       - BOT_PASSWORD=${BOT_PASSWORD}
       - BOT_COMMANDS_CHANNEL=${BOT_COMMANDS_CHANNEL}
       - BOT_BLOCKS_FOUND_CHANNEL=${BOT_BLOCKS_FOUND_CHANNEL}
-    restart: always
+      - MONEROD_RPC_URL=${MONEROD_RPC_URL}
     depends_on:
       - db
     read_only: true
