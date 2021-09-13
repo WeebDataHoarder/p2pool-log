@@ -175,7 +175,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 $myReward = (string) round(($myReward / array_sum($payouts)) * 100, 3);
 
 
-                $m = "Your shares $share_count (+$uncle_count uncles) $myReward%";
+                $m = "Your shares $share_count (+$uncle_count uncles) ~$myReward%";
 
                 if($share_count > 0){
                     $m .= " :: Shares position [";
@@ -279,7 +279,7 @@ function shareFoundMessage(Block $b, Subscription $sub, Miner $miner, array $unc
 
     $share_count = array_sum($positions[0]);
     $uncle_count = array_sum($positions[1]);
-    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "SHARE FOUND:" . FORMAT_RESET . " SideChain height " . FORMAT_COLOR_RED . $b->getHeight() . FORMAT_RESET . " ".(count($uncles) > 0 ? ":: Includes " . count($uncles) . " uncle(s) " : "").($b->isMainFound() ? ":: ".FORMAT_BOLD. FORMAT_COLOR_LIGHT_GREEN ." MINED MAINCHAN BLOCK " . $b->getMainHeight() . FORMAT_RESET . " " : "").":: Your shares $share_count (+$uncle_count uncles) $myReward% :: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
+    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "SHARE FOUND:" . FORMAT_RESET . " SideChain height " . FORMAT_COLOR_RED . $b->getHeight() . FORMAT_RESET . " ".(count($uncles) > 0 ? ":: Includes " . count($uncles) . " uncle(s) " : "").($b->isMainFound() ? ":: ".FORMAT_BOLD. FORMAT_COLOR_LIGHT_GREEN ." MINED MAINCHAN BLOCK " . $b->getMainHeight() . FORMAT_RESET . " " : "").":: Your shares $share_count (+$uncle_count uncles) ~$myReward% :: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
 }
 
 function uncleFoundMessage(UncleBlock $b, Subscription $sub, Miner $miner){
@@ -290,7 +290,7 @@ function uncleFoundMessage(UncleBlock $b, Subscription $sub, Miner $miner){
 
     $share_count = array_sum($positions[0]);
     $uncle_count = array_sum($positions[1]);
-    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "UNCLE SHARE FOUND:" . FORMAT_RESET . " SideChain height " . FORMAT_COLOR_RED . $b->getParentHeight() . FORMAT_RESET . " :: Accounted for ".(100 - SIDECHAIN_UNCLE_PENALTY)."% of value :: Your shares $share_count (+$uncle_count uncles) $myReward% :: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
+    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "UNCLE SHARE FOUND:" . FORMAT_RESET . " SideChain height " . FORMAT_COLOR_RED . $b->getParentHeight() . FORMAT_RESET . " :: Accounted for ".(100 - SIDECHAIN_UNCLE_PENALTY)."% of value :: Your shares $share_count (+$uncle_count uncles) ~$myReward% :: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
 }
 
 $lastTip = null;
