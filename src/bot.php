@@ -171,7 +171,9 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                     $miners[] = $database->getMiner($sub->getMiner());
                 }
 
+                $c = 0;
                 foreach ($foundBlocks as $block){
+                    ++$c;
                     $o = CoinbaseTransactionOutputs::fromTransactionId($block->getTxId());
                     if($o !== null){
                         $outputs = $o->matchOutputs($miners, $block->getTxPrivkey());
@@ -184,13 +186,13 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                             $total = bcdiv((string) $total, "1000000000000", 12);
 
                             sendIRCMessage("Your latest payout was $total XMR on block ".$block->getMainHeight()." :: https://xmrchain.net/block/".$block->getMainHeight()." :: Tx private key ".$block->getTxPrivkey()." :: https://xmrchain.net/tx/".$block->getTxId(), $answer);
-                            break;
+                            return;
                         }
                     }
                 }
 
 
-                sendIRCMessage("No known payouts to your subscriptions in the last ".count($foundBlocks)." mined blocks.", $answer);
+                sendIRCMessage("No known payouts to your subscriptions in the last ".$c." mined blocks.", $answer);
             },
         ],
         [
