@@ -210,7 +210,28 @@ function shortenAddress(string $address) : string {
 }
 
 function blockFoundMessage(Block $b){
-    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "BLOCK FOUND:" . FORMAT_RESET . " MainChain height " . FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " :: SideChain height ". $b->getHeight() ." :: https://xmrchain.net/block/" . $b->getMainHeight() . " :: Hash " . FORMAT_ITALIC . $b->getMainHash(), BOT_BLOCKS_FOUND_CHANNEL);
+    global $database;
+
+    $payouts = [];
+
+    foreach($database->getBlocksInWindow() as $block){
+        if(!isset($payouts[$block->getMiner()])){
+            $payouts[$block->getMiner()] = 0;
+        }
+        $payouts[$block->getMiner()] += 100;
+    }
+    foreach($database->getUnclesInWindow() as $uncle){
+        if(!isset($payouts[$uncle->getMiner()])){
+            $payouts[$uncle->getMiner()] = 0;
+        }
+        $block = $database->getBlockById($uncle->getParentId());
+        $payouts[$uncle->getMiner()] += 100 - SIDECHAIN_UNCLE_PENALTY;
+        if($block !== null){
+            $payouts[$block->getMiner()] += SIDECHAIN_UNCLE_PENALTY;
+        }
+    }
+
+    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "BLOCK FOUND:" . FORMAT_RESET . " MainChain height " . FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " :: SideChain height ". $b->getHeight() ." :: https://xmrchain.net/block/" . $b->getMainHeight() . " :: Total of ".count($payouts)." miners paid :: Hash " . FORMAT_ITALIC . $b->getMainHash(), BOT_BLOCKS_FOUND_CHANNEL);
     sendIRCMessage("Verify payouts using Tx private key " . FORMAT_ITALIC . $b->getTxPrivkey() . FORMAT_RESET . " :: Payout transaction for block ". FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " https://xmrchain.net/tx/".$b->getTxId()."", BOT_BLOCKS_FOUND_CHANNEL);
     sleep(1);
 }
