@@ -112,6 +112,30 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 sendIRCMessage("Subscribed your nick to shares found by " . FORMAT_ITALIC . shortenAddress($maddress->getAddress()), $answer);
             },
         ],
+        [
+            "targets" => [BOT_NICK, BOT_COMMANDS_CHANNEL],
+            "permission" => PERMISSION_NONE,
+            "match" => "#^\\.(unsub|unsubscribe)[ \t]+(4[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+)[ \t]*#iu",
+            "command" => function($originalSender, $answer, $to, $matches){
+                global $database;
+                $maddress = null;
+                try{
+                    $maddress = new MoneroAddress($matches[2]);
+                    if(!$maddress->verify()){
+                        sendIRCMessage("Invalid Monero address " . $matches[2], $answer);
+                        return;
+                    }
+                }catch (\Exception $e){
+                    sendIRCMessage("Invalid Monero address " . $matches[2], $answer);
+                    return;
+                }
+
+                $miner = $database->getOrCreateMinerByAddress($maddress->getAddress());
+                $sub = new Subscription($miner->getId(), $originalSender["user"]);
+                $database->removeSubscription($sub);
+                sendIRCMessage("Unsubscribed your nick to shares found by " . FORMAT_ITALIC . shortenAddress($maddress->getAddress()), $answer);
+            },
+        ],
     ];
 
     if($to === BOT_NICK){
