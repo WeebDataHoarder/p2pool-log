@@ -220,18 +220,16 @@ function getShareWindowPosition(int $miner, int $count = 30): array {
 
     $tip = $database->getChainTip();
 
-    $window_start = $tip->getHeight() - SIDECHAIN_PPLNS_WINDOW;
-
     $blocks_found = array_fill(0, $count, 0);
     $uncles_found = array_fill(0, $count, 0);
 
     foreach ($database->getBlocksByMinerIdInWindow($miner) as $b){
-        $index = intdiv($b->getHeight() - $window_start, intdiv(SIDECHAIN_PPLNS_WINDOW + $count - 1, $count));
+        $index = intdiv($tip->getHeight() - $b->getHeight(), intdiv(SIDECHAIN_PPLNS_WINDOW + $count - 1, $count));
         $blocks_found[min($index, $count - 1)]++;
     }
 
     foreach ($database->getUnclesByMinerIdInWindow($miner) as $b){
-        $index = intdiv($b->getParentHeight() - $window_start, intdiv(SIDECHAIN_PPLNS_WINDOW + $count - 1, $count));
+        $index = intdiv($tip->getHeight() - $b->getParentHeight(), intdiv(SIDECHAIN_PPLNS_WINDOW + $count - 1, $count));
         $uncles_found[min($index, $count - 1)]++;
     }
 
