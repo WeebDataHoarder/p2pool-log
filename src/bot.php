@@ -170,7 +170,8 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
 
                             $total = bcdiv((string) $total, "1000000000000", 12);
 
-                            sendIRCMessage("Last pool payout $total XMR on block ".$block->getMainHeight()." :: https://xmrchain.net/block/".$block->getMainHeight()." :: Tx private key ".$block->getTxPrivkey()." :: https://xmrchain.net/tx/".$block->getTxId(), $to);
+                            sendIRCMessage("Last pool payout $total XMR on block ".$block->getMainHeight()." :: https://xmrchain.net/block/".$block->getMainHeight()." :: Tx private key ".$block->getTxPrivkey()." :: https://xmrchain.net/tx/".$block->getTxId(), $answer);
+                            break;
                         }
                     }
                 }
