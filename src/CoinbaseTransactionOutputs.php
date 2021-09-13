@@ -8,6 +8,9 @@ use p2pool\db\Miner;
 class CoinbaseTransactionOutputs{
     private array $outputs = [];
 
+    /** @var CoinbaseTransactionOutputs[] */
+    private static array $cache = [];
+
     /**
      * @param Miner[] $miners
      */
@@ -29,6 +32,10 @@ class CoinbaseTransactionOutputs{
     }
 
     public static function fromTransactionId($txId): ?CoinbaseTransactionOutputs {
+        if(isset(static::$cache[$txId])){
+            return static::$cache[$txId];
+        }
+
         $ch = curl_init(getenv("MONEROD_RPC_URL") . "get_transactions");
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             "Content-Type: application/json"
@@ -53,7 +60,7 @@ class CoinbaseTransactionOutputs{
 
             $o = new CoinbaseTransactionOutputs();
             $o->outputs = $outputs;
-            return $o;
+            return static::$cache[$txId] = $o;
         }
 
         return null;
