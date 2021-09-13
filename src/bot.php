@@ -139,6 +139,19 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
         [
             "targets" => [BOT_NICK, BOT_COMMANDS_CHANNEL],
             "permission" => PERMISSION_NONE,
+            "match" => "#^\\.(last|block|lastblock)[ \t]*#iu",
+            "command" => function($originalSender, $answer, $to, $matches){
+                global $database;
+
+                $block = $database->getLastFound();
+                $payouts = getWindowPayouts($block->getHeight());
+
+                sendIRCMessage("Last block found at MainChain height " . FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET . " :: SideChain height ". $block->getHeight() ." :: ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://xmrchain.net/block/" . $block->getMainHeight() . " ::  ".FORMAT_COLOR_ORANGE . count($payouts)." miners paid" . FORMAT_RESET . " :: Hash " . FORMAT_ITALIC . $block->getMainHash(), $answer);
+            },
+        ],
+        [
+            "targets" => [BOT_NICK, BOT_COMMANDS_CHANNEL],
+            "permission" => PERMISSION_NONE,
             "match" => "#^\\.payout[ \t]*#iu",
             "command" => function($originalSender, $answer, $to, $matches){
                 global $database;
@@ -170,7 +183,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
 
                             $total = bcdiv((string) $total, "1000000000000", 12);
 
-                            sendIRCMessage("Last pool payout $total XMR on block ".$block->getMainHeight()." :: https://xmrchain.net/block/".$block->getMainHeight()." :: Tx private key ".$block->getTxPrivkey()." :: https://xmrchain.net/tx/".$block->getTxId(), $answer);
+                            sendIRCMessage("Your latest payout was $total XMR on block ".$block->getMainHeight()." :: https://xmrchain.net/block/".$block->getMainHeight()." :: Tx private key ".$block->getTxPrivkey()." :: https://xmrchain.net/tx/".$block->getTxId(), $answer);
                             break;
                         }
                     }
