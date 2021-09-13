@@ -136,6 +136,57 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 sendIRCMessage("Unsubscribed your nick to shares found by " . FORMAT_ITALIC . shortenAddress($maddress->getAddress()), $answer);
             },
         ],
+        [
+            "targets" => [BOT_NICK, BOT_COMMANDS_CHANNEL],
+            "permission" => PERMISSION_NONE,
+            "match" => "#^\\.(status)[ \t]*#iu",
+            "command" => function($originalSender, $answer, $to, $matches){
+                global $database;
+
+                $subs = $database->getSubscriptionsFromNick($originalSender["user"]);
+                $total = null;
+                foreach ($subs as $sub){
+                    $result = getShareWindowPosition($sub->getMiner());
+                    if($total === null){
+                        $result = $total;
+                    }else{
+                        foreach ($total[0] as $i => $v){
+                            $total[0][$i] += $result[0][$i];
+                        }
+                        foreach ($total[1] as $i => $v){
+                            $total[1][$i] += $result[1][$i];
+                        }
+                    }
+                }
+
+                if($total === null){
+                    sendIRCMessage("No known subscriptions to your nick.", $answer);
+                    return;
+                }
+
+                $share_count = array_sum($total[0]);
+                $uncle_count = array_sum($total[1]);
+
+                $m = "Your shares $share_count (+$uncle_count uncles)";
+
+                if($share_count > 0){
+                    $m .= " :: Shares position [";
+                    foreach ($total[0] as $p){
+                        $m .= ($p > 0 ? ($p > 9 ? "+" : (string) $p) : ".");
+                    }
+                    $m .= "]";
+                }
+
+                if($uncle_count > 0){
+                    $m .= " :: Uncles position [";
+                    foreach ($total[1] as $p){
+                        $m .= ($p > 0 ? ($p > 9 ? "+" : (string) $p) : ".");
+                    }
+                    $m .= "]";
+                }
+                sendIRCMessage($m, $answer);
+            },
+        ],
     ];
 
     if($to === BOT_NICK){
@@ -164,17 +215,42 @@ function blockFoundMessage(Block $b){
     sleep(1);
 }
 
-function shareFoundMessage(Block $b, Subscription $sub, Miner $miner, array $uncles = []){
+function getShareWindowPosition(int $miner, int $count = 30): array {
     global $database;
-    $share_count = count(iterator_to_array($database->getBlocksByMinerIdInWindow($miner->getId())));
-    $uncle_count = count(iterator_to_array($database->getUnclesByMinerIdInWindow($miner->getId())));
+
+    $tip = $database->getChainTip();
+
+    $window_start = $tip->getHeight() - SIDECHAIN_PPLNS_WINDOW;
+
+    $blocks_found = array_fill(0, $count, 0);
+    $uncles_found = array_fill(0, $count, 0);
+
+    foreach ($database->getBlocksByMinerIdInWindow($miner) as $b){
+        $index = intdiv($b->getHeight() - $window_start, intdiv(SIDECHAIN_PPLNS_WINDOW + $count - 1, $count));
+        $blocks_found[min($index, $count - 1)]++;
+    }
+
+    foreach ($database->getUnclesByMinerIdInWindow($miner) as $b){
+        $index = intdiv($b->getParentHeight() - $window_start, intdiv(SIDECHAIN_PPLNS_WINDOW + $count - 1, $count));
+        $uncles_found[min($index, $count - 1)]++;
+    }
+
+    return [$blocks_found, $uncles_found];
+}
+
+function shareFoundMessage(Block $b, Subscription $sub, Miner $miner, array $uncles = []){
+    $positions = getShareWindowPosition($miner->getId());
+
+    $share_count = array_sum($positions[0]);
+    $uncle_count = array_sum($positions[1]);
     sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "SHARE FOUND:" . FORMAT_RESET . " SideChain height " . FORMAT_COLOR_RED . $b->getHeight() . FORMAT_RESET . " ".(count($uncles) > 0 ? ":: Includes " . count($uncles) . " uncle(s) " : "").($b->isMainFound() ? ":: ".FORMAT_BOLD. FORMAT_COLOR_LIGHT_GREEN ." MINED MAINCHAN BLOCK " . $b->getMainHeight() . FORMAT_RESET . " " : "").":: Your shares $share_count (+$uncle_count uncles) :: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
 }
 
 function uncleFoundMessage(UncleBlock $b, Subscription $sub, Miner $miner){
-    global $database;
-    $share_count = count(iterator_to_array($database->getBlocksByMinerIdInWindow($miner->getId())));
-    $uncle_count = count(iterator_to_array($database->getUnclesByMinerIdInWindow($miner->getId())));
+    $positions = getShareWindowPosition($miner->getId());
+
+    $share_count = array_sum($positions[0]);
+    $uncle_count = array_sum($positions[1]);
     sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "UNCLE SHARE FOUND:" . FORMAT_RESET . " SideChain height " . FORMAT_COLOR_RED . $b->getParentHeight() . FORMAT_RESET . " :: Accounted for ".(100 - SIDECHAIN_UNCLE_PENALTY)."% of value :: Your shares $share_count (+$uncle_count uncles) :: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
 }
 
