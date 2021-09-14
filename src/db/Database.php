@@ -131,11 +131,15 @@ class Database{
         return $deleted;
     }
 
+    public function setBlockFound(string $id, bool $found = true) {
+        pg_query_params($this->db, "UPDATE blocks SET main_found = $2 WHERE id = $1;", [$id, $found ? 'y' : 'n']);
+    }
+
     public function insertBlock(Block $b): bool {
         $block = $this->getBlockById($b->getId());
         if($block !== null){ //Update found status if existent
             if($b->isMainFound() and !$block->isMainFound()){
-                pg_query_params($this->db, "UPDATE blocks SET main_found = 'y' WHERE id = $1;", [$block->getId()]);
+                $this->setBlockFound($block->getId(), true);
             }
             return true;
         }

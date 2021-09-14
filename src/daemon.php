@@ -78,7 +78,10 @@ $knownTip = $startFrom;
 
 echo "[CHAIN] Starting tip from height $knownTip\n";
 
+$runs = 0;
+
 do{
+    ++$runs;
     $disk_tip = get_block_from_disk($knownTip);
     $db_tip = $database->getBlockByHeight($knownTip);
 
@@ -117,6 +120,16 @@ do{
                 $database->insertUncleBlock($uncle);
             }
             $knownTip = $disk_block->getHeight();
+        }
+    }
+
+    if($runs % 10 === 0){ //Every 10 seconds or so
+        foreach ($database->getFound(6) as $foundBlock){
+            //Scan last 6 found blocks and set status accordingly if found/not found
+            $tx = CoinbaseTransactionOutputs::fromTransactionId($foundBlock->getTxId());
+            if($tx === null and (time() - $foundBlock->getTimestamp()) > 120){ // If more than two minutes have passed before we get utxo, remove from found
+                $database->setBlockFound($foundBlock->getId(), false);
+            }
         }
     }
 
