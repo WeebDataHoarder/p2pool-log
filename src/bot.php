@@ -216,7 +216,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
 
                             $total = bcdiv((string) $total, "1000000000000", 12);
 
-                            sendIRCMessage("Your last payout was ". FORMAT_COLOR_ORANGE . FORMAT_BOLD . $total . " XMR".FORMAT_RESET." on block ". FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET ." :: ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC, ".time_elapsed_string("@" . $block->getTimestamp())." :: https://xmrchain.net/block/".$block->getMainHeight()." :: Tx private key ". FORMAT_ITALIC . $block->getTxPrivkey() . FORMAT_RESET ." :: https://xmrchain.net/tx/".$block->getTxId(), $answer);
+                            sendIRCMessage("Your last payout was ". FORMAT_COLOR_ORANGE . FORMAT_BOLD . $total . " XMR".FORMAT_RESET." on block ". FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET ." ".time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://xmrchain.net/block/".$block->getMainHeight()." :: Tx private key ". FORMAT_ITALIC . $block->getTxPrivkey() . FORMAT_RESET ." :: https://xmrchain.net/tx/".$block->getTxId(), $answer);
                             return;
                         }
                     }
@@ -271,7 +271,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 $myReward = (string) round($myReward * 100, 3);
 
 
-                $m = "Your shares $share_count (+$uncle_count uncles) ~$myReward% " . si_units($myHashrate);
+                $m = "Your shares $share_count (+$uncle_count uncles) ~$myReward% " . si_units($myHashrate) . "H/s";
 
                 if($share_count > 0){
                     $m .= " :: Shares position [";
