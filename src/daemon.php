@@ -114,6 +114,9 @@ do{
             break;
         }
         echo "[CHAIN] Inserting block " . $disk_block->getId() . " at height " . $disk_block->getHeight() . "\n";
+        if($disk_block->isMainFound()){
+            echo "[CHAIN] BLOCK FOUND! Main height " . $disk_block->getMainHeight() . ", main id " . $disk_block->getMainHash() . "\n";
+        }
         if($database->insertBlock($disk_block)){
             foreach ($uncles as $uncle){
                 echo "[CHAIN] Inserting uncle " . $uncle->getId() . " @ " . $disk_block->getId() . " at " . $disk_block->getHeight() . "\n";
@@ -128,6 +131,7 @@ do{
             //Scan last 6 found blocks and set status accordingly if found/not found
             $tx = CoinbaseTransactionOutputs::fromTransactionId($foundBlock->getTxId());
             if($tx === null and (time() - $foundBlock->getTimestamp()) > 120){ // If more than two minutes have passed before we get utxo, remove from found
+                echo "[CHAIN] Block that was found at main height " . $foundBlock->getMainHeight() . ", cannot find output, marking not found\n";
                 $database->setBlockFound($foundBlock->getId(), false);
             }
         }
