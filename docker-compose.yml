@@ -11,6 +11,12 @@ volumes:
     external: false
 
 services:
+  tor:
+    image: osminogin/tor-simple:0.4.6.7
+    tmpfs:
+      - /tmp
+    networks:
+      - p2pool-log
   scraper:
     build:
       context: docker/php
@@ -50,6 +56,7 @@ services:
       - MONEROD_RPC_URL=${MONEROD_RPC_URL}
     depends_on:
       - db
+      - tor
     read_only: true
     security_opt:
       - no-new-privileges:true

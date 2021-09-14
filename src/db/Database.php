@@ -68,6 +68,15 @@ class Database{
         return new Miner($res["id"], $res["address"]);
     }
 
+    public function getMinerByAddressBounds(string $addressStart, string $addressEnd) : ?Miner {
+        $result = pg_query_params($this->db, 'SELECT id, address FROM miners WHERE address LIKE $1 AND address LIKE $2;', [$addressStart . "%", "%" . $addressEnd]);
+        if(($res = pg_fetch_assoc($result)) === false){
+            return null;
+        }
+
+        return new Miner($res["id"], $res["address"]);
+    }
+
     public function getOrCreateMinerByAddress(string $address) : ?Miner {
         $record = $this->getMinerByAddress($address);
 
