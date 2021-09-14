@@ -174,6 +174,20 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 $c = 0;
                 foreach ($foundBlocks as $block){
                     ++$c;
+
+                    $window_payouts = getWindowPayouts($block->getHeight());
+                    $hasMiners = false;
+                    foreach ($miners as $miner){
+                        if(isset($window_payouts[$miner->getId()])){
+                            $hasMiners = true;
+                            break;
+                        }
+                    }
+
+                    if(!$hasMiners){
+                        continue;
+                    }
+
                     $o = CoinbaseTransactionOutputs::fromTransactionId($block->getTxId());
                     if($o !== null){
                         $outputs = $o->matchOutputs($miners, $block->getTxPrivkey());
