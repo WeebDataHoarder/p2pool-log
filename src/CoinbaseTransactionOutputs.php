@@ -41,17 +41,11 @@ class CoinbaseTransactionOutputs{
             return static::$cache[$txId] = $o;
         }
 
-        $ch = curl_init(getenv("MONEROD_RPC_URL") . "get_transactions");
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            "Content-Type: application/json"
-        ]);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+        $ret = Utils::moneroRPC("get_transactions", [
             "txs_hashes" => [$txId],
             "decode_as_json" => true
-        ]));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        ]);
 
-        $ret = @json_decode(curl_exec($ch));
         if(isset($ret->txs[0]->as_json)){
             $outputs = [];
             $tx = json_decode($ret->txs[0]->as_json);

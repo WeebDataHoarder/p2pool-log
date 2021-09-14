@@ -62,4 +62,15 @@ class Utils {
 
         return $max + $baseIndex;
     }
+
+    static function moneroRPC(string $method, array $params){
+        $ch = curl_init(getenv("MONEROD_RPC_URL") . $method);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            "Content-Type: application/json"
+        ]);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($params));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+        return @json_decode(curl_exec($ch));
+    }
 }
