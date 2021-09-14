@@ -34,6 +34,11 @@ class CoinbaseTransactionOutputs{
     public static function fromTransactionId($txId): ?CoinbaseTransactionOutputs {
         if(isset(static::$cache[$txId])){
             return static::$cache[$txId];
+        }else if (file_exists($path = "/cache/tx_{$txId}.json")){
+            $outputs = json_decode(file_get_contents($path));
+            $o = new CoinbaseTransactionOutputs();
+            $o->outputs = $outputs;
+            return static::$cache[$txId] = $o;
         }
 
         $ch = curl_init(getenv("MONEROD_RPC_URL") . "get_transactions");
@@ -60,6 +65,7 @@ class CoinbaseTransactionOutputs{
 
             $o = new CoinbaseTransactionOutputs();
             $o->outputs = $outputs;
+            file_put_contents($path, json_encode($o->outputs));
             return static::$cache[$txId] = $o;
         }
 

@@ -7,6 +7,8 @@ networks:
 volumes:
   db:
     external: false
+  cache:
+    external: false
 
 services:
   scraper:
@@ -23,6 +25,7 @@ services:
       - no-new-privileges:true
     volumes:
       - ./:/app:ro
+      - cache:/cache:rw
       - "${API_FOLDER}:/api:ro"
     tmpfs:
       - /tmp
@@ -52,6 +55,7 @@ services:
       - no-new-privileges:true
     volumes:
       - ./:/app:ro
+      - cache:/cache:rw
     tmpfs:
       - /tmp
     networks:
