@@ -323,6 +323,10 @@ function blockFoundMessage(Block $b){
     sleep(1);
 }
 
+function blockUnfoundMessage(Block $b){
+    sendIRCMessage(FORMAT_COLOR_RED . FORMAT_BOLD . "BLOCK ORPHANED:" . FORMAT_RESET . " MainChain height " . FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " :: SideChain height ". $b->getHeight() ." :: SideChain ID " . FORMAT_ITALIC . $b->getMainHash() . FORMAT_RESET . " :: MainChain Hash " . FORMAT_ITALIC . $b->getMainHash(), BOT_BLOCKS_FOUND_CHANNEL);
+}
+
 function getShareWindowPosition(int $miner, int $count = 30): array {
     global $database;
 
@@ -395,9 +399,21 @@ function time_elapsed_string($datetime, $full = false) {
     return $string ? implode(' ', $string) . ' ago' : 'just now';
 }
 
+$foundBlocks = iterator_to_array($database->getFound(6));
+
 $lastTip = null;
 function handleCheck(){
-    global $lastTip, $database;
+    global $lastTip, $database, $foundBlocks;
+
+
+    foreach ($foundBlocks as $i => $block){
+        $block_db = $database->getBlockById($block->getId());
+        if($block_db === null or !$block_db->isMainFound()){
+            blockUnfoundMessage($block);
+            unset($foundBlocks[$i]);
+        }
+    }
+
     if($lastTip === null){
         $lastTip = $database->getChainTip();
     }
@@ -412,6 +428,10 @@ function handleCheck(){
         $b = $database->getBlockByHeight($h);
         if($b->isMainFound()){
             blockFoundMessage($b);
+            array_pop($foundBlocks);
+            if(count($foundBlocks) > 6){
+                array_unshift($foundBlocks, $b);
+            }
         }
 
         $uncles = iterator_to_array($database->getUnclesByParentId($b->getId()));
