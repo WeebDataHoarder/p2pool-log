@@ -299,20 +299,25 @@ function getWindowPayouts(int $startBlock = null): array {
         if(!isset($payouts[$block->getMiner()])){
             $payouts[$block->getMiner()] = 0;
         }
-        $payouts[$block->getMiner()] += 100;
+        $payouts[$block->getMiner()] = gmp_add($payouts[$block->getMiner()], $block->getDifficulty());
     }
     foreach($database->getUnclesInWindow($startBlock) as $uncle){
         if(!isset($payouts[$uncle->getMiner()])){
             $payouts[$uncle->getMiner()] = 0;
         }
         $block = $database->getBlockById($uncle->getParentId());
-        $payouts[$uncle->getMiner()] += 100 - SIDECHAIN_UNCLE_PENALTY;
+        //TODO: use proper difficulty
+        $difficulty = $database->getBlockByHeight($uncle->getHeight());
+        $difficulty = $difficulty !== null ? $difficulty->getDifficulty() : 0;
+        list($uncle_penalty, $rem) = gmp_div_qr(gmp_mul($difficulty, SIDECHAIN_UNCLE_PENALTY), 100);
+
+        $payouts[$uncle->getMiner()] = gmp_add($payouts[$uncle->getMiner()], gmp_sub($block->getDifficulty(), $uncle_penalty));
         if($block !== null){
-            $payouts[$block->getMiner()] += SIDECHAIN_UNCLE_PENALTY;
+            $payouts[$block->getMiner()] = gmp_add($payouts[$block->getMiner()], $uncle_penalty);
         }
     }
 
-    return $payouts;
+    return array_map("gmp_intval", $payouts);
 }
 
 function blockFoundMessage(Block $b){
