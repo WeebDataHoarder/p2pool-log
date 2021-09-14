@@ -146,7 +146,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 $block = $database->getLastFound();
                 $payouts = getWindowPayouts($block->getHeight());
 
-                sendIRCMessage("Last block found at MainChain height " . FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET . " :: SideChain height ". $block->getHeight() ." :: ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://xmrchain.net/block/" . $block->getMainHeight() . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners paid" . FORMAT_RESET . " :: Hash " . FORMAT_ITALIC . $block->getMainHash(), $answer);
+                sendIRCMessage("Last block found at MainChain height " . FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET . " :: SideChain height ". $block->getHeight() ." :: ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC, ".time_elapsed_string("@" . $block->getTimestamp())." ago :: https://xmrchain.net/block/" . $block->getMainHeight() . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners paid" . FORMAT_RESET . " :: Hash " . FORMAT_ITALIC . $block->getMainHash(), $answer);
             },
         ],
         [
@@ -185,7 +185,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
 
                             $total = bcdiv((string) $total, "1000000000000", 12);
 
-                            sendIRCMessage("Your last payout was ". FORMAT_COLOR_ORANGE . FORMAT_BOLD . $total . " XMR".FORMAT_RESET." on block ". FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET ." :: https://xmrchain.net/block/".$block->getMainHeight()." :: Tx private key ". FORMAT_ITALIC . $block->getTxPrivkey() . FORMAT_RESET ." :: https://xmrchain.net/tx/".$block->getTxId(), $answer);
+                            sendIRCMessage("Your last payout was ". FORMAT_COLOR_ORANGE . FORMAT_BOLD . $total . " XMR".FORMAT_RESET." on block ". FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET ." :: ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC, ".time_elapsed_string("@" . $block->getTimestamp())." ago :: https://xmrchain.net/block/".$block->getMainHeight()." :: Tx private key ". FORMAT_ITALIC . $block->getTxPrivkey() . FORMAT_RESET ." :: https://xmrchain.net/tx/".$block->getTxId(), $answer);
                             return;
                         }
                     }
@@ -350,6 +350,35 @@ function uncleFoundMessage(UncleBlock $b, Subscription $sub, Miner $miner){
     $share_count = array_sum($positions[0]);
     $uncle_count = array_sum($positions[1]);
     sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "UNCLE SHARE FOUND:" . FORMAT_RESET . " SideChain height " . FORMAT_COLOR_RED . $b->getParentHeight() . FORMAT_RESET . " :: Accounted for ".(100 - SIDECHAIN_UNCLE_PENALTY)."% of value :: Your shares $share_count (+$uncle_count uncles) ~$myReward% :: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
+}
+
+function time_elapsed_string($datetime, $full = false) {
+    $now = new \DateTime;
+    $ago = new \DateTime($datetime);
+    $diff = $now->diff($ago);
+
+    $diff->w = floor($diff->d / 7);
+    $diff->d -= $diff->w * 7;
+
+    $string = array(
+        'y' => 'y',
+        'm' => 'M',
+        'w' => 'w',
+        'd' => 'd',
+        'h' => 'h',
+        'i' => 'm',
+        's' => 's',
+    );
+    foreach ($string as $k => &$v) {
+        if ($diff->$k) {
+            $v = $diff->$k . ' ' . $v . ($diff->$k > 1 ? 's' : '');
+        } else {
+            unset($string[$k]);
+        }
+    }
+
+    if (!$full) $string = array_slice($string, 0, 1);
+    return $string ? implode(', ', $string) . ' ago' : 'just now';
 }
 
 $lastTip = null;
