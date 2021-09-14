@@ -146,7 +146,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 $block = $database->getLastFound();
                 $payouts = getWindowPayouts($block->getHeight());
 
-                sendIRCMessage("Last block found at MainChain height " . FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET . " :: SideChain height ". $block->getHeight() ." :: ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC, ".time_elapsed_string("@" . $block->getTimestamp())." ago :: https://xmrchain.net/block/" . $block->getMainHeight() . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners paid" . FORMAT_RESET . " :: Hash " . FORMAT_ITALIC . $block->getMainHash(), $answer);
+                sendIRCMessage("Last block found at MainChain height " . FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET . " :: SideChain height ". $block->getHeight() ." :: ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC, ".time_elapsed_string("@" . $block->getTimestamp())." :: https://xmrchain.net/block/" . $block->getMainHeight() . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners paid" . FORMAT_RESET . " :: Hash " . FORMAT_ITALIC . $block->getMainHash(), $answer);
             },
         ],
         [
@@ -185,7 +185,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
 
                             $total = bcdiv((string) $total, "1000000000000", 12);
 
-                            sendIRCMessage("Your last payout was ". FORMAT_COLOR_ORANGE . FORMAT_BOLD . $total . " XMR".FORMAT_RESET." on block ". FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET ." :: ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC, ".time_elapsed_string("@" . $block->getTimestamp())." ago :: https://xmrchain.net/block/".$block->getMainHeight()." :: Tx private key ". FORMAT_ITALIC . $block->getTxPrivkey() . FORMAT_RESET ." :: https://xmrchain.net/tx/".$block->getTxId(), $answer);
+                            sendIRCMessage("Your last payout was ". FORMAT_COLOR_ORANGE . FORMAT_BOLD . $total . " XMR".FORMAT_RESET." on block ". FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET ." :: ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC, ".time_elapsed_string("@" . $block->getTimestamp())." :: https://xmrchain.net/block/".$block->getMainHeight()." :: Tx private key ". FORMAT_ITALIC . $block->getTxPrivkey() . FORMAT_RESET ." :: https://xmrchain.net/tx/".$block->getTxId(), $answer);
                             return;
                         }
                     }
