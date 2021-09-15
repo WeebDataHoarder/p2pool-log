@@ -129,7 +129,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
 
                 $myReward = (($payouts[$miner->getId()] ?? 0) / array_sum($payouts));
                 if($myReward > NOTIFICATION_POOL_SHARE){
-                    sendIRCMessage("You have more than ".round(NOTIFICATION_POOL_SHARE * 100, 2)."% of the pool current hashrate. Share notifications will not be sent above this threshold.", $answer);
+                    sendIRCMessage("You have more than ".round(NOTIFICATION_POOL_SHARE * 100, 2)."% of the pool's current hashrate. Share notifications will not be sent above this threshold.", $answer);
                 }
 
             },
