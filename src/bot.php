@@ -124,6 +124,14 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 $sub = new Subscription($miner->getId(), $originalSender["user"]);
                 $database->addSubscription($sub);
                 sendIRCMessage("Subscribed your nick to shares found by " . FORMAT_ITALIC . shortenAddress($maddress->getAddress()), $answer);
+
+                $payouts = getWindowPayouts();
+
+                $myReward = (($payouts[$miner->getId()] ?? 0) / array_sum($payouts));
+                if($myReward > NOTIFICATION_POOL_SHARE){
+                    sendIRCMessage("You have more than ".round(NOTIFICATION_POOL_SHARE * 100, 2)."% of the pool current hashrate. Share notifications will not be sent above this threshold.", $answer);
+                }
+
             },
         ],
         [
@@ -377,10 +385,14 @@ function getShareWindowPosition(int $miner, int $count = 30): array {
 }
 
 function shareFoundMessage(Block $b, Subscription $sub, Miner $miner, array $uncles = []){
-    $positions = getShareWindowPosition($miner->getId());
     $payouts = getWindowPayouts();
 
-    $myReward = (string) round((($payouts[$miner->getId()] ?? 0) / array_sum($payouts)) * 100, 3);
+    $myReward = (($payouts[$miner->getId()] ?? 0) / array_sum($payouts));
+    if($myReward > NOTIFICATION_POOL_SHARE){ //Disable notifications with more than 20% of hashrate
+        return;
+    }
+    $myReward = (string) round($myReward * 100, 3);
+    $positions = getShareWindowPosition($miner->getId());
 
     $share_count = array_sum($positions[0]);
     $uncle_count = array_sum($positions[1]);
@@ -388,10 +400,14 @@ function shareFoundMessage(Block $b, Subscription $sub, Miner $miner, array $unc
 }
 
 function uncleFoundMessage(UncleBlock $b, Subscription $sub, Miner $miner){
-    $positions = getShareWindowPosition($miner->getId());
     $payouts = getWindowPayouts();
 
-    $myReward = (string) round((($payouts[$miner->getId()] ?? 0) / array_sum($payouts)) * 100, 3);
+    $myReward = (($payouts[$miner->getId()] ?? 0) / array_sum($payouts));
+    if($myReward > NOTIFICATION_POOL_SHARE){ //Disable notifications with more than 20% of hashrate
+        return;
+    }
+    $myReward = (string) round($myReward * 100, 3);
+    $positions = getShareWindowPosition($miner->getId());
 
     $share_count = array_sum($positions[0]);
     $uncle_count = array_sum($positions[1]);
