@@ -38,31 +38,9 @@ function get_block_from_disk(int $index, array &$uncles = []) : Block {
     global $database;
     $s = (string) $index;
     $path = "/api/share/" . substr($index, -1) . "/$s";
-    $data = json_decode(file_get_contents($path), true);
+    $data = json_decode(file_get_contents($path), false);
 
-    $miner = $database->getOrCreateMinerByAddress($data["wallet"]);
-    if($miner === null){
-        throw new \Exception("Could not get or create miner");
-    }
-
-
-    $block = new Block($data["id"], (int) $data["height"], $data["prev_hash"], (int) $data["mheight"], $data["mhash"], (int) $data["diff"], $data["pow_hash"], (int) $data["ts"], $miner->getId(), $data["tx_coinbase"], $data["tx_priv"], (isset($data["block_found"]) and $data["block_found"] === "true"));
-
-    if(isset($data["uncles"])){
-        foreach ($data["uncles"] as $uncle){
-            if(!isset($uncle["wallet"])){ //No known data
-                continue;
-            }
-            $uncle_miner = $database->getOrCreateMinerByAddress($uncle["wallet"]);
-            if($uncle_miner === null){
-                throw new \Exception("Could not get or create miner");
-            }
-
-            $uncles[] = new UncleBlock($uncle["id"], $data["id"], (int) $data["height"], (int) $uncle["height"], $uncle["prev_hash"], (int) $uncle["ts"], $uncle_miner->getId());
-        }
-    }
-
-    return $block;
+    return Block::fromJSONObject($database, $data, $uncles);
 }
 
 if($isFresh){
@@ -115,7 +93,7 @@ do{
         }
         echo "[CHAIN] Inserting block " . $disk_block->getId() . " at height " . $disk_block->getHeight() . "\n";
         if($disk_block->isMainFound()){
-            echo "[CHAIN] BLOCK FOUND! Main height " . $disk_block->getMainHeight() . ", main id " . $disk_block->getMainHash() . "\n";
+            echo "[CHAIN] BLOCK FOUND! Main height " . $disk_block->getMainHeight() . ", main id " . $disk_block->getMainId() . "\n";
         }
         if($database->insertBlock($disk_block)){
             foreach ($uncles as $uncle){
@@ -127,14 +105,47 @@ do{
     }
 
     if($runs % 10 === 0){ //Every 10 seconds or so
-        foreach ($database->getFound(6) as $foundBlock){
+        foreach ($database->getAllFound(6) as $foundBlock){
             //Scan last 6 found blocks and set status accordingly if found/not found
-            $tx = CoinbaseTransactionOutputs::fromTransactionId($foundBlock->getTxId());
+            $tx = CoinbaseTransactionOutputs::fromTransactionId($foundBlock->getCoinbaseId());
             if($tx === null and (time() - $foundBlock->getTimestamp()) > 120){ // If more than two minutes have passed before we get utxo, remove from found
                 echo "[CHAIN] Block that was found at main height " . $foundBlock->getMainHeight() . ", cannot find output, marking not found\n";
                 $database->setBlockFound($foundBlock->getId(), false);
             }
         }
+    }
+
+    if($isFresh){
+        //Do migration tasks
+
+        foreach ($database->getBlocksByQuery("", []) as $block){
+            if($block->isProofHigherThanDifficulty()){
+                $tx = CoinbaseTransactionOutputs::fromTransactionId($block->getCoinbaseId());
+                if($tx !== null){
+                    echo "[CHAIN] Marking block ".$block->getMainId()." as found\n";
+                    $database->setBlockFound($block->getId(), true);
+                }else if((time() - $block->getTimestamp()) <= 120){
+                    echo "[CHAIN] Marking block ".$block->getMainId()." as found for now\n";
+                    $database->setBlockFound($block->getId(), true);
+                }
+                sleep(1);
+            }
+        }
+
+        foreach ($database->getUncleBlocksByQuery("", []) as $block){
+            if($block->isProofHigherThanDifficulty()){
+                $tx = CoinbaseTransactionOutputs::fromTransactionId($block->getCoinbaseId());
+                if($tx !== null){
+                    echo "[CHAIN] Marking block ".$block->getMainId()." as found\n";
+                    $database->setBlockFound($block->getId(), true);
+                }else if((time() - $block->getTimestamp()) <= 120){
+                    echo "[CHAIN] Marking block ".$block->getMainId()." as found for now\n";
+                    $database->setBlockFound($block->getId(), true);
+                }
+                sleep(1);
+            }
+        }
+        $isFresh = false;
     }
 
     sleep(1);

@@ -97,11 +97,11 @@ class Database{
      * @param array $params
      * @return \Generator|Block[]
      */
-    private function getBlocksByQuery(string $where, array $params = []) : \Generator {
+    public function getBlocksByQuery(string $where, array $params = []) : \Generator {
         $result = pg_query_params($this->db, 'SELECT * FROM blocks '.$where.';', $params);
 
         while(($res = pg_fetch_assoc($result)) !== false){
-            yield new Block($res["id"], $res["height"], $res["previous_id"], $res["main_height"], $res["main_hash"], $res["difficulty"], $res["pow_hash"], $res["timestamp"], $res["miner"], $res["tx_id"], $res["tx_privkey"], $res["main_found"] === "t");
+            yield new Block($res["id"], $res["height"], $res["previous_id"], $res["coinbase_id"], $res["coinbase_reward"], $res["coinbase_privkey"], $res["difficulty"], $res["timestamp"], $res["miner"], $res["pow_hash"], $res["main_height"], $res["main_id"], $res["main_found"] === "t", $res["miner_main_id"], $res["miner_main_difficulty"]);
         }
     }
 
@@ -110,11 +110,11 @@ class Database{
      * @param array $params
      * @return \Iterator|UncleBlock[]
      */
-    private function getUncleBlocksByQuery(string $where, array $params = []) : \Iterator {
+    public function getUncleBlocksByQuery(string $where, array $params = []) : \Iterator {
         $result = pg_query_params($this->db, 'SELECT * FROM uncles '.$where.';', $params);
 
         while(($res = pg_fetch_assoc($result)) !== false){
-            yield new UncleBlock($res["id"], $res["parent_id"], $res["parent_height"], $res["height"], $res["previous_id"], $res["timestamp"], $res["miner"]);
+            yield new UncleBlock($res["parent_id"], $res["parent_height"], $res["id"], $res["height"], $res["previous_id"], $res["coinbase_id"], $res["coinbase_reward"], $res["coinbase_privkey"], $res["difficulty"], $res["timestamp"], $res["miner"], $res["pow_hash"], $res["main_height"], $res["main_id"], $res["main_found"] === "t", $res["miner_main_id"], $res["miner_main_difficulty"]);
         }
     }
 
@@ -142,6 +142,7 @@ class Database{
 
     public function setBlockFound(string $id, bool $found = true) {
         pg_query_params($this->db, "UPDATE blocks SET main_found = $2 WHERE id = $1;", [$id, $found ? 'y' : 'n']);
+        pg_query_params($this->db, "UPDATE uncles SET main_found = $2 WHERE id = $1;", [$id, $found ? 'y' : 'n']);
     }
 
     public function insertBlock(Block $b): bool {
@@ -153,8 +154,8 @@ class Database{
             return true;
         }
 
-        return pg_query_params($this->db, "INSERT INTO blocks (id, height, previous_id, main_height, main_hash, difficulty, pow_hash, timestamp, miner, tx_id, tx_privkey, main_found) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)", [
-           $b->getId(), $b->getHeight(), $b->getPreviousId(), $b->getMainHeight(), $b->getMainHash(), $b->getDifficulty(), $b->getPowHash(), $b->getTimestamp(), $b->getMiner(), $b->getTxId(), $b->getTxPrivkey(), $b->isMainFound() ? "y" : "n"
+        return pg_query_params($this->db, "INSERT INTO blocks (id, height, previous_id, coinbase_id, coinbase_reward, coinbase_privkey, difficulty, timestamp, miner, pow_hash, main_height, main_id, main_found, miner_main_id, miner_main_difficulty) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)", [
+           $b->getId(), $b->getHeight(), $b->getPreviousId(), $b->getCoinbaseId(), $b->getCoinbaseReward(), $b->getCoinbasePrivkey(), $b->getDifficulty(), $b->getTimestamp(), $b->getMiner(), $b->getPowHash(), $b->getMainHeight(), $b->getMainId(), $b->isMainFound() ? "y" : "n", $b->getMinerMainId(), $b->getMinerMainDifficulty()
         ]) !== false;
     }
 
@@ -168,8 +169,8 @@ class Database{
             return true;
         }
 
-        return pg_query_params($this->db, "INSERT INTO uncles (id, parent_id, parent_height, height, previous_id, timestamp, miner) VALUES ($1, $2, $3, $4, $5, $6, $7)", [
-                $u->getId(), $u->getParentId(), $u->getParentHeight(), $u->getHeight(), $u->getPreviousId(), $u->getTimestamp(), $u->getMiner()
+        return pg_query_params($this->db, "INSERT INTO uncles (parent_id, parent_height, id, height, previous_id, coinbase_id, coinbase_reward, coinbase_privkey, difficulty, timestamp, miner, pow_hash, main_height, main_id, main_found, miner_main_id, miner_main_difficulty) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)", [
+                $u->getParentId(), $u->getParentHeight(), $u->getId(), $u->getHeight(), $u->getPreviousId(), $u->getCoinbaseId(), $u->getCoinbaseReward(), $u->getCoinbasePrivkey(), $u->getDifficulty(), $u->getTimestamp(), $u->getMiner(), $u->getPowHash(), $u->getMainHeight(), $u->getMainId(), $u->isMainFound() ? "y" : "n", $u->getMinerMainId(), $u->getMinerMainDifficulty()
             ]) !== false;
     }
 
@@ -184,8 +185,51 @@ class Database{
     /**
      * @return \Iterator|Block[]
      */
+    public function getAllFound(int $limit = null) : \Iterator {
+        $blocks = $this->getFound($limit);
+        $uncles = $this->getFoundUncles($limit);
+
+        for($i = 0; $i < $limit; ++$i){
+            /** @var Block $current */
+            $current = null;
+
+            if($blocks->current() !== null){
+                if($current === null or $blocks->current()->getMainHeight() > $current->getMainHeight()){
+                    $current = $blocks->current();
+                }
+            }
+            if($uncles->current() !== null){
+                if($current === null or $uncles->current()->getMainHeight() > $current->getMainHeight()){
+                    $current = $uncles->current();
+                }
+            }
+
+            if($current === null){
+                break;
+            }
+
+            if($blocks->current() === $current){
+                $blocks->next();
+            }else if($uncles->current() === $current){
+                $uncles->next();
+            }
+
+            yield $current;
+        }
+    }
+
+    /**
+     * @return \Iterator|Block[]
+     */
     public function getFound(int $limit = null) : \Iterator {
         return $this->getBlocksByQuery("WHERE main_found = 'y' ORDER BY main_height DESC" . ($limit !== null ? " LIMIT $limit" : ""));
+    }
+
+    /**
+     * @return \Iterator|UncleBlock[]
+     */
+    public function getFoundUncles(int $limit = null) : \Iterator {
+        return $this->getUncleBlocksByQuery("WHERE main_found = 'y' ORDER BY main_height DESC" . ($limit !== null ? " LIMIT $limit" : ""));
     }
 
     public function getBlockById(string $id) : ?Block {

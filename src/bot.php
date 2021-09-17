@@ -169,9 +169,9 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 $payouts = getWindowPayouts($block->getHeight());
                 $tip = $database->getChainTip();
 
-                $hashrate = $tip->getDifficulty() / SIDECHAIN_BLOCK_TIME;
+                $hashrate = gmp_div(gmp_init($tip->getDifficulty(), 16), SIDECHAIN_BLOCK_TIME);
 
-                sendIRCMessage("Last block found at height " . FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET . " ".time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://xmrchain.net/block/" . $block->getMainHeight() . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners paid" . FORMAT_RESET . " :: Pool height ". $tip->getHeight() ." :: Pool hashrate ".si_units($hashrate)."H/s", $answer);
+                sendIRCMessage("Last block found at height " . FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET . " ".time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://xmrchain.net/block/" . $block->getMainHeight() . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners paid" . FORMAT_RESET . " for ".FORMAT_COLOR_ORANGE . FORMAT_BOLD . bcdiv((string) $block->getCoinbaseReward(), "1000000000000", 12) . " XMR".FORMAT_RESET." :: Pool height ". $tip->getHeight() ." :: Pool hashrate ".si_units((int) gmp_strval($hashrate))."H/s", $answer);
             },
         ],
         [
@@ -198,6 +198,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
 
                 $c = 0;
                 foreach ($foundBlocks as $block){
+                    /** @var Block $block */
                     ++$c;
 
                     $window_payouts = getWindowPayouts($block->getHeight());
@@ -213,9 +214,11 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                         continue;
                     }
 
-                    $o = CoinbaseTransactionOutputs::fromTransactionId($block->getTxId());
+                    //TODO: this can be done with saved reward
+
+                    $o = CoinbaseTransactionOutputs::fromTransactionId($block->getCoinbaseId());
                     if($o !== null){
-                        $outputs = $o->matchOutputs($miners, $block->getTxPrivkey());
+                        $outputs = $o->matchOutputs($miners, $block->getCoinbasePrivkey());
                         if(count($outputs) > 0){
                             $total = 0;
                             foreach ($outputs as $output){
@@ -224,7 +227,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
 
                             $total = bcdiv((string) $total, "1000000000000", 12);
 
-                            sendIRCMessage("Your last payout was ". FORMAT_COLOR_ORANGE . FORMAT_BOLD . $total . " XMR".FORMAT_RESET." on block ". FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET ." ".time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://xmrchain.net/block/".$block->getMainHeight()." :: Tx private key ". FORMAT_ITALIC . $block->getTxPrivkey() . FORMAT_RESET ." :: https://xmrchain.net/tx/".$block->getTxId(), $answer);
+                            sendIRCMessage("Your last payout was ". FORMAT_COLOR_ORANGE . FORMAT_BOLD . $total . " XMR".FORMAT_RESET." on block ". FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET ." ".time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://xmrchain.net/block/".$block->getMainHeight()." :: Tx private key ". FORMAT_ITALIC . $block->getCoinbasePrivkey() . FORMAT_RESET ." :: https://xmrchain.net/tx/".$block->getCoinbaseId(), $answer);
                             return;
                         }
                     }
@@ -268,14 +271,14 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 }
 
                 $tip = $database->getChainTip();
-                $hashrate = $tip->getDifficulty() / SIDECHAIN_BLOCK_TIME;
+                $hashrate = gmp_div(gmp_init($tip->getDifficulty(), 16), SIDECHAIN_BLOCK_TIME);
 
                 $share_count = array_sum($total[0]);
                 $uncle_count = array_sum($total[1]);
 
                 $myReward = ($myReward / array_sum($payouts));
 
-                $myHashrate = $hashrate * $myReward;
+                $myHashrate = (int) gmp_strval(gmp_mul($hashrate, $myReward));
                 $myReward = (string) round($myReward * 100, 3);
 
 
@@ -330,7 +333,7 @@ function getWindowPayouts(int $startBlock = null): array {
         if(!isset($payouts[$block->getMiner()])){
             $payouts[$block->getMiner()] = 0;
         }
-        $payouts[$block->getMiner()] = gmp_add($payouts[$block->getMiner()], $block->getDifficulty());
+        $payouts[$block->getMiner()] = gmp_add($payouts[$block->getMiner()], gmp_init($block->getDifficulty(), 16));
     }
     foreach($database->getUnclesInWindow($startBlock) as $uncle){
         if(!isset($payouts[$uncle->getMiner()])){
@@ -339,10 +342,10 @@ function getWindowPayouts(int $startBlock = null): array {
         $block = $database->getBlockById($uncle->getParentId());
         //TODO: use proper difficulty
         $difficulty = $database->getBlockByHeight($uncle->getHeight());
-        $difficulty = $difficulty !== null ? $difficulty->getDifficulty() : 0;
+        $difficulty = $difficulty !== null ? gmp_init($difficulty->getDifficulty(), 16) : 0;
         list($uncle_penalty, $rem) = gmp_div_qr(gmp_mul($difficulty, SIDECHAIN_UNCLE_PENALTY), 100);
 
-        $payouts[$uncle->getMiner()] = gmp_add($payouts[$uncle->getMiner()], gmp_sub($block->getDifficulty(), $uncle_penalty));
+        $payouts[$uncle->getMiner()] = gmp_add($payouts[$uncle->getMiner()], gmp_sub(gmp_init($block->getDifficulty(), 16), $uncle_penalty));
         if($block !== null){
             $payouts[$block->getMiner()] = gmp_add($payouts[$block->getMiner()], $uncle_penalty);
         }
@@ -354,13 +357,13 @@ function getWindowPayouts(int $startBlock = null): array {
 function blockFoundMessage(Block $b){
     $payouts = getWindowPayouts();
 
-    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "BLOCK FOUND:" . FORMAT_RESET . " height " . FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " :: Pool height ". $b->getHeight() ." :: https://xmrchain.net/block/" . $b->getMainHeight() . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners paid" . FORMAT_RESET . " :: Hash " . FORMAT_ITALIC . $b->getMainHash(), BOT_BLOCKS_FOUND_CHANNEL);
-    sendIRCMessage("Verify payouts using Tx private key " . FORMAT_ITALIC . $b->getTxPrivkey() . FORMAT_RESET . " :: Payout transaction for block ". FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " https://xmrchain.net/tx/".$b->getTxId()."", BOT_BLOCKS_FOUND_CHANNEL);
+    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "BLOCK FOUND:" . FORMAT_RESET . " height " . FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " :: Pool height ". $b->getHeight() ." :: https://xmrchain.net/block/" . $b->getMainHeight() . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners paid" . FORMAT_RESET . " :: Hash " . FORMAT_ITALIC . $b->getMainId(), BOT_BLOCKS_FOUND_CHANNEL);
+    sendIRCMessage("Paid ".FORMAT_COLOR_ORANGE . FORMAT_BOLD . bcdiv((string) $b->getCoinbaseReward(), "1000000000000", 12) . " XMR".FORMAT_RESET." :: Verify payouts using Tx private key " . FORMAT_ITALIC . $b->getCoinbasePrivkey() . FORMAT_RESET . " :: Payout transaction for block ". FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " https://xmrchain.net/tx/".$b->getCoinbaseId()."", BOT_BLOCKS_FOUND_CHANNEL);
     sleep(1);
 }
 
 function blockUnfoundMessage(Block $b){
-    sendIRCMessage(FORMAT_COLOR_RED . FORMAT_BOLD . "BLOCK ORPHANED:" . FORMAT_RESET . " height " . FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " :: Pool height ". $b->getHeight() ." :: Pool ID " . FORMAT_ITALIC . $b->getMainHash() . FORMAT_RESET . " :: Hash " . FORMAT_ITALIC . $b->getMainHash(), BOT_BLOCKS_FOUND_CHANNEL);
+    sendIRCMessage(FORMAT_COLOR_RED . FORMAT_BOLD . "BLOCK ORPHANED:" . FORMAT_RESET . " height " . FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " :: Pool height ". $b->getHeight() ." :: Pool ID " . FORMAT_ITALIC . $b->getMainId() . FORMAT_RESET . " :: Hash " . FORMAT_ITALIC . $b->getMainId(), BOT_BLOCKS_FOUND_CHANNEL);
 }
 
 function getShareWindowPosition(int $miner, int $count = 30): array {
@@ -388,7 +391,7 @@ function shareFoundMessage(Block $b, Subscription $sub, Miner $miner, array $unc
     $payouts = getWindowPayouts();
 
     $myReward = (($payouts[$miner->getId()] ?? 0) / array_sum($payouts));
-    if($myReward > NOTIFICATION_POOL_SHARE){ //Disable notifications with more than 20% of hashrate
+    if($myReward > NOTIFICATION_POOL_SHARE and !$b->isMainFound()){ //Disable notifications with more than 20% of hashrate
         return;
     }
     $myReward = (string) round($myReward * 100, 3);
@@ -403,7 +406,7 @@ function uncleFoundMessage(UncleBlock $b, Subscription $sub, Miner $miner){
     $payouts = getWindowPayouts();
 
     $myReward = (($payouts[$miner->getId()] ?? 0) / array_sum($payouts));
-    if($myReward > NOTIFICATION_POOL_SHARE){ //Disable notifications with more than 20% of hashrate
+    if($myReward > NOTIFICATION_POOL_SHARE and !$b->isMainFound()){ //Disable notifications with more than 20% of hashrate
         return;
     }
     $myReward = (string) round($myReward * 100, 3);
@@ -411,7 +414,7 @@ function uncleFoundMessage(UncleBlock $b, Subscription $sub, Miner $miner){
 
     $share_count = array_sum($positions[0]);
     $uncle_count = array_sum($positions[1]);
-    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "UNCLE SHARE FOUND:" . FORMAT_RESET . " Pool height " . FORMAT_COLOR_RED . $b->getParentHeight() . FORMAT_RESET . " :: Accounted for ".(100 - SIDECHAIN_UNCLE_PENALTY)."% of value :: Your shares $share_count (+$uncle_count uncles) ~$myReward% :: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
+    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "UNCLE SHARE FOUND:" . FORMAT_RESET . " Pool height " . FORMAT_COLOR_RED . $b->getParentHeight() . FORMAT_RESET . " ".($b->isMainFound() ? ":: ".FORMAT_BOLD. FORMAT_COLOR_LIGHT_GREEN ." MINED MAINCHAN BLOCK " . $b->getMainHeight() . FORMAT_RESET . " " : "").":: Accounted for ".(100 - SIDECHAIN_UNCLE_PENALTY)."% of value :: Your shares $share_count (+$uncle_count uncles) ~$myReward% :: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
 }
 
 function time_elapsed_string($datetime, $full = false) {

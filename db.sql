@@ -6,29 +6,55 @@ CREATE TABLE miners (
 
 CREATE TABLE blocks (
     id varchar PRIMARY KEY, -- sidechain id
-    height bigint UNIQUE NOT NULL, -- height on sidechain
+    height bigint UNIQUE NOT NULL, -- sidechain height
     previous_id varchar UNIQUE NOT NULL, -- previous sidechain id
-    main_height bigint NOT NULL,
-    main_hash varchar UNIQUE NOT NULL, -- hash on mainchain
-    main_found boolean NOT NULL,
-    difficulty bigint NOT NULL,
-    pow_hash varchar NOT NULL,
-    timestamp bigint NOT NULL,
+
+    coinbase_id varchar NOT NULL, -- coinbase transaction id
+    coinbase_reward bigint NOT NULL,
+    coinbase_privkey varchar NOT NULL, -- used to match outputs from coinbase transaction
+
+    difficulty varchar NOT NULL, -- current side chain difficulty
+    timestamp bigint NOT NULL, -- timestamp as set in block
     miner bigint NOT NULL,
-    tx_id varchar NOT NULL, -- coinbase transaction id
-    tx_privkey varchar NOT NULL, -- used to match outputs from coinbase transaction
+    pow_hash varchar NOT NULL, -- result of PoW function as a hash (all 0x00 = not known)
+
+    main_height bigint NOT NULL,
+    main_id varchar UNIQUE NOT NULL, -- Block id on mainchain
+    main_found boolean NOT NULL DEFAULT 'n', -- for convenience, can be calculated from PoW hash and miner main difficulty, but can also be orphaned
+
+    miner_main_id varchar NOT NULL, -- main chain id of previous block being mined against (all 0xFF = not known)
+    miner_main_difficulty varchar NOT NULL, -- previous difficulty to match pow_hash against (all 0xFF = not known)
+
     FOREIGN KEY (miner) REFERENCES miners (id)
     -- FOREIGN KEY (previous_id) REFERENCES blocks (id)
 );
 
 CREATE TABLE uncles (
-    id varchar PRIMARY KEY, -- sidechain id
     parent_id varchar NOT NULL, -- parent id on sidechain
     parent_height bigint NOT NULL, -- parent height on sidechain
-    height bigint NOT NULL, -- height on sidechain
-    previous_id varchar NOT NULL, -- previous sidechain id
-    timestamp bigint NOT NULL,
+
+    -- same as blocks --
+
+    id varchar PRIMARY KEY, -- sidechain id
+    height bigint UNIQUE NOT NULL, -- sidechain height
+    previous_id varchar UNIQUE NOT NULL, -- previous sidechain id
+
+    coinbase_id varchar NOT NULL, -- coinbase transaction id
+    coinbase_reward bigint NOT NULL,
+    coinbase_privkey varchar NOT NULL, -- used to match outputs from coinbase transaction
+
+    difficulty varchar NOT NULL, -- current side chain difficulty
+    timestamp bigint NOT NULL, -- timestamp as set in block
     miner bigint NOT NULL,
+    pow_hash varchar NOT NULL, -- result of PoW function as a hash (all 0x00 = not known)
+
+    main_height bigint NOT NULL,
+    main_id varchar UNIQUE NOT NULL, -- Block id on mainchain
+    main_found boolean NOT NULL DEFAULT 'n', -- for convenience, can be calculated from PoW hash and miner main difficulty, but can also be orphaned
+
+    miner_main_id varchar NOT NULL, -- main chain id of previous block being mined against (all 0xFF = not known)
+    miner_main_difficulty varchar NOT NULL, -- previous difficulty to match pow_hash against (all 0xFF = not known)
+
     FOREIGN KEY (parent_id) REFERENCES blocks (id),
     FOREIGN KEY (parent_height) REFERENCES blocks (height),
     FOREIGN KEY (miner) REFERENCES miners (id)
