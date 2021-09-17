@@ -170,8 +170,9 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 $tip = $database->getChainTip();
 
                 $hashrate = gmp_div(gmp_init($tip->getDifficulty(), 16), SIDECHAIN_BLOCK_TIME);
+                $global_hashrate = gmp_div(gmp_init($tip->getMinerMainDifficulty(), 16), MAINCHAIN_BLOCK_TIME);
 
-                sendIRCMessage("Last block found at height " . FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET . " ".time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://xmrchain.net/block/" . $block->getMainHeight() . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners paid" . FORMAT_RESET . " for ".FORMAT_COLOR_ORANGE . FORMAT_BOLD . bcdiv((string) $block->getCoinbaseReward(), "1000000000000", 12) . " XMR".FORMAT_RESET." :: Pool height ". $tip->getHeight() ." :: Pool hashrate ".si_units((int) gmp_strval($hashrate))."H/s", $answer);
+                sendIRCMessage("Last block found at height " . FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET . " ".time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://xmrchain.net/block/" . $block->getMainHeight() . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners" . FORMAT_RESET . " paid for ".FORMAT_COLOR_ORANGE . FORMAT_BOLD . bcdiv((string) $block->getCoinbaseReward(), "1000000000000", 12) . " XMR".FORMAT_RESET." :: Pool height ". $tip->getHeight() ." :: Pool hashrate ".si_units((int) gmp_strval($hashrate))."H/s :: Global hashrate ".si_units((int) gmp_strval($global_hashrate))."H/s", $answer);
             },
         ],
         [
