@@ -271,14 +271,14 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 }
 
                 $tip = $database->getChainTip();
-                $hashrate = gmp_div(gmp_init($tip->getDifficulty(), 16), SIDECHAIN_BLOCK_TIME);
+                $hashrate = gmp_div(gmp_strval(gmp_init($tip->getDifficulty(), 16)), SIDECHAIN_BLOCK_TIME);
 
                 $share_count = array_sum($total[0]);
                 $uncle_count = array_sum($total[1]);
 
                 $myReward = ($myReward / array_sum($payouts));
 
-                $myHashrate = (int) gmp_strval(gmp_mul($hashrate, $myReward));
+                $myHashrate = gmp_strval($hashrate) * $myReward;
                 $myReward = (string) round($myReward * 100, 3);
 
 
