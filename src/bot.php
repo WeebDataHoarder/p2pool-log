@@ -496,10 +496,17 @@ function handleCheck(){
 
     foreach ($foundBlocks as $i => $block){
         $block_db = $database->getBlockById($block->getId());
-        if($block_db === null or !$block_db->isMainFound()){
-            blockUnfoundMessage($block);
-            unset($foundBlocks[$i]);
+        if($block_db !== null and $block_db->isMainFound()){
+            continue;
         }
+
+        $uncle_db = $database->getUncleById($block->getId());
+        if($uncle_db !== null and $uncle_db->isMainFound()){
+            continue;
+        }
+
+        blockUnfoundMessage($block);
+        unset($foundBlocks[$i]);
     }
 
     if($lastTip === null){

@@ -232,6 +232,10 @@ class Database{
         return $this->getUncleBlocksByQuery("WHERE main_found = 'y' ORDER BY main_height DESC" . ($limit !== null ? " LIMIT $limit" : ""));
     }
 
+    /**
+     * @param string $id
+     * @return Block|null
+     */
     public function getBlockById(string $id) : ?Block {
         return iterator_to_array($this->getBlocksByQuery('WHERE id = $1', [$id]))[0] ?? null;
     }
@@ -271,7 +275,11 @@ class Database{
         return $this->getBlocksByQuery('WHERE height > ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').' - $1) AND height <= ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').') AND miner = $2', [SIDECHAIN_PPLNS_WINDOW, $miner]);
     }
 
-    public function getUncleById(string $id){
+    /**
+     * @param string $id
+     * @return UncleBlock
+     */
+    public function getUncleById(string $id) : ?UncleBlock {
         return iterator_to_array($this->getUncleBlocksByQuery('WHERE id = $1', [$id]))[0] ?? null;
     }
 
