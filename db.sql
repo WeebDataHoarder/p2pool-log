@@ -36,8 +36,8 @@ CREATE TABLE uncles (
     -- same as blocks --
 
     id varchar PRIMARY KEY, -- sidechain id
-    height bigint UNIQUE NOT NULL, -- sidechain height
-    previous_id varchar UNIQUE NOT NULL, -- previous sidechain id
+    height bigint NOT NULL, -- sidechain height
+    previous_id varchar NOT NULL, -- previous sidechain id
 
     coinbase_id varchar NOT NULL, -- coinbase transaction id
     coinbase_reward bigint NOT NULL,
@@ -49,7 +49,7 @@ CREATE TABLE uncles (
     pow_hash varchar NOT NULL, -- result of PoW function as a hash (all 0x00 = not known)
 
     main_height bigint NOT NULL,
-    main_id varchar UNIQUE NOT NULL, -- Block id on mainchain
+    main_id varchar NOT NULL, -- Block id on mainchain
     main_found boolean NOT NULL DEFAULT 'n', -- for convenience, can be calculated from PoW hash and miner main difficulty, but can also be orphaned
 
     miner_main_id varchar NOT NULL, -- main chain id of previous block being mined against (all 0xFF = not known)
@@ -69,7 +69,9 @@ CREATE TABLE subscriptions (
 );
 
 CREATE INDEX blocks_miner_idx ON blocks (miner);
+CREATE INDEX uncles_height_idx ON uncles (height);
 CREATE INDEX uncles_parent_id_idx ON uncles (parent_id);
+CREATE INDEX uncles_main_id_idx ON uncles (main_id);
 CREATE INDEX uncles_parent_height_idx ON uncles (parent_height);
 CREATE INDEX uncles_miner_idx ON uncles (miner);
 
