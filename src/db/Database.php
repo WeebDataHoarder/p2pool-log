@@ -179,7 +179,7 @@ class Database{
     }
 
     public function getLastFound() : ?Block {
-        return iterator_to_array($this->getFound())[0] ?? null;
+        return iterator_to_array($this->getAllFound(1))[0] ?? null;
     }
 
     /**
