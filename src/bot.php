@@ -188,7 +188,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                     return;
                 }
 
-                $foundBlocks = $database->getFound(60);
+                $foundBlocks = $database->getAllFound(60);
 
 
                 $miners = [];
@@ -487,7 +487,7 @@ $checks = [
     ]
 ];
 
-$foundBlocks = iterator_to_array($database->getFound(6));
+$foundBlocks = iterator_to_array($database->getAllFound(6));
 
 $lastTip = null;
 function handleCheck(){
@@ -530,6 +530,14 @@ function handleCheck(){
         }
 
         foreach ($uncles as $uncle){
+            if($uncle->isMainFound()){
+                blockFoundMessage($uncle);
+                array_pop($foundBlocks);
+                if(count($foundBlocks) > 6){
+                    array_unshift($foundBlocks, $uncle);
+                }
+            }
+
             $uncle_miner = $database->getMiner($uncle->getMiner());
             foreach ($database->getSubscriptionsFromMiner($uncle_miner->getId()) as $sub){
                 uncleFoundMessage($uncle, $sub, $uncle_miner);
