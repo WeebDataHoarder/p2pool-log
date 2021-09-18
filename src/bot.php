@@ -554,10 +554,20 @@ function handleCheck(){
     for($h = $lastTip->getHeight() + 1; $h <= $newTip->getHeight(); ++$h){
         $b = $database->getBlockByHeight($h);
         if($b->isMainFound()){
-            blockFoundMessage($b);
-            array_unshift($foundBlocks, $b);
-            if(count($foundBlocks) > 6){
-                array_pop($foundBlocks);
+            $blockExists = false;
+            foreach ($foundBlocks as $block){
+                if($block->getMainId() === $b->getMainId()){
+                    $blockExists = true;
+                    break;
+                }
+            }
+
+            if(!$blockExists){
+                blockFoundMessage($b);
+                array_unshift($foundBlocks, $b);
+                if(count($foundBlocks) > 6){
+                    array_pop($foundBlocks);
+                }
             }
         }
 
@@ -570,10 +580,20 @@ function handleCheck(){
 
         foreach ($uncles as $uncle){
             if($uncle->isMainFound()){
-                blockFoundMessage($uncle);
-                array_unshift($foundBlocks, $uncle);
-                if(count($foundBlocks) > 6){
-                    array_pop($foundBlocks);
+                $blockExists = false;
+                foreach ($foundBlocks as $block){
+                    if($block->getMainId() === $b->getMainId()){
+                        $blockExists = true;
+                        break;
+                    }
+                }
+
+                if(!$blockExists){
+                    blockFoundMessage($b);
+                    array_unshift($foundBlocks, $b);
+                    if(count($foundBlocks) > 6){
+                        array_pop($foundBlocks);
+                    }
                 }
             }
 
