@@ -63,6 +63,7 @@ services:
     volumes:
       - ./:/app:ro
       - cache:/cache:rw
+      - "${API_FOLDER}:/api:ro"
     tmpfs:
       - /tmp
     networks:

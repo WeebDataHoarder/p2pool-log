@@ -126,15 +126,14 @@ class Block{
         return null;
     }
 
-    public function isProofHigherThanDifficulty() : bool{
+    public function getProofDifficulty() : string {
         $base = gmp_sub(gmp_pow(2, 256), 1);
         $pow = gmp_init(implode(array_reverse(str_split($this->getPowHash(), 2))), 16); //Need to reverse it
-        if(gmp_cmp(0, $pow) == 0){ //Unknown PoW
-            return false;
-        }
-        $blockDiff = gmp_div($base, $pow);
-        $minerDiff = gmp_init($this->getMinerMainDifficulty(), 16);
-        return gmp_cmp($blockDiff, $minerDiff) >= 0;
+        return str_pad(gmp_cmp(0, $pow) == 0 /* Unknown PoW */ ? "" : gmp_strval(gmp_div($base, $pow), 16), strlen($this->getPowHash()), "0", STR_PAD_LEFT);
+    }
+
+    public function isProofHigherThanDifficulty() : bool {
+        return gmp_cmp(gmp_init($this->getProofDifficulty(), 16), gmp_init($this->getMinerMainDifficulty(), 16)) >= 0;
     }
 
     /**

@@ -11,7 +11,8 @@ use p2pool\db\UncleBlock;
 require_once __DIR__ . "/../vendor/autoload.php";
 require_once __DIR__ . "/constants.php";
 
-$database = new Database($argv[1]);
+$api = new P2PoolAPI(new Database($argv[1]), "/api");
+$database = $api->getDatabase();
 
 foreach (["IRC_SERVER_HOST", "IRC_SERVER_PORT", "IRC_SERVER_PASS", "BOT_BLOCKS_FOUND_CHANNEL", "BOT_COMMANDS_CHANNEL", "BOT_NICK", "BOT_USER", "BOT_PASSWORD",] as $c) {
     define($c, getenv($c));
@@ -163,16 +164,46 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
             "permission" => PERMISSION_NONE,
             "match" => "#^\\.(last|block|lastblock|pool)[ \t]*#iu",
             "command" => function($originalSender, $answer, $to, $matches){
-                global $database;
+                global $database, $api;
 
                 $block = $database->getLastFound();
                 $payouts = getWindowPayouts($block->getHeight());
                 $tip = $database->getChainTip();
 
-                $hashrate = gmp_div(gmp_init($tip->getDifficulty(), 16), SIDECHAIN_BLOCK_TIME);
-                $global_hashrate = gmp_div(gmp_init($tip->getMinerMainDifficulty(), 16), MAINCHAIN_BLOCK_TIME);
+                $diff = gmp_init($tip->getDifficulty(), 16);
+                $global_diff = gmp_init($tip->getMinerMainDifficulty(), 16);
+                $hashrate = gmp_div($diff, SIDECHAIN_BLOCK_TIME);
+                $global_hashrate = gmp_div($global_diff, MAINCHAIN_BLOCK_TIME);
 
-                sendIRCMessage("Last block found at height " . FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET . " ".time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://xmrchain.net/block/" . $block->getMainHeight() . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners" . FORMAT_RESET . " paid for ".FORMAT_COLOR_ORANGE . FORMAT_BOLD . bcdiv((string) $block->getCoinbaseReward(), "1000000000000", 12) . " XMR".FORMAT_RESET." :: Pool height ". $tip->getHeight() ." :: Pool hashrate ".si_units((int) gmp_strval($hashrate))."H/s :: Global hashrate ".si_units((int) gmp_strval($global_hashrate))."H/s", $answer);
+                /** @var Block[] $blocks */
+                $blocks = iterator_to_array($database->getBlocksByQuery('WHERE height > $1 ORDER BY height DESC LIMIT $2', [$tip->getHeight(), $blockCount = (15 * 60) / MAINCHAIN_BLOCK_TIME]));
+                $timeDiff = end($blocks)->getTimestamp() - reset($blocks)->getTimestamp();
+                $expectedTime = count($blocks) * SIDECHAIN_BLOCK_TIME;
+                $adjustement = ($timeDiff / $expectedTime) * 1000000;
+                $adjusted_diff = gmp_div(gmp_mul($diff, $adjustement), 1000000);
+                $short_hashrate = gmp_div($adjusted_diff, SIDECHAIN_BLOCK_TIME);
+                /*$cummDiff = gmp_init(0);
+                foreach ($blocks as $b){
+                    $cummDiff = gmp_add($cummDiff, gmp_init($b->getProofDifficulty(), 16));
+                }*/
+
+                $current_effort = gmp_intval(gmp_div(gmp_mul(gmp_sub($api->getPoolStats()->totalHashes, $api->getPoolBlocks()[0]->totalHashes), 100000), $global_diff)) / 100000;
+
+                $effort = FORMAT_BOLD;
+                if($current_effort <= 0){
+                    $current_effort = 0;
+                }
+                if($current_effort < 100){
+                    $effort .= FORMAT_COLOR_LIGHT_GREEN;
+                }else if($current_effort < 200){
+                    $effort .= FORMAT_COLOR_YELLOW;
+                }else if($current_effort < 300){
+                    $effort .= FORMAT_COLOR_RED;
+                }
+
+                $effort .= round($current_effort, 2) . "%" . FORMAT_RESET;
+
+                sendIRCMessage("Last block found at height " . FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET . " ".time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://xmrchain.net/block/" . $block->getMainHeight() . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners" . FORMAT_RESET . " paid for ".FORMAT_COLOR_ORANGE . FORMAT_BOLD . bcdiv((string) $block->getCoinbaseReward(), "1000000000000", 12) . " XMR".FORMAT_RESET." :: Current effort $effort :: Pool height ". $tip->getHeight() ." :: Pool hashrate ".si_units(gmp_intval($hashrate))."H/s (short-term ".si_units(gmp_intval($short_hashrate), 1)."H/s) :: Global hashrate ".si_units(gmp_intval($global_hashrate))."H/s", $answer);
             },
         ],
         [
@@ -241,7 +272,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
         [
             "targets" => [BOT_NICK, BOT_COMMANDS_CHANNEL],
             "permission" => PERMISSION_NONE,
-            "match" => "#^\\.(status)[ \t]*#iu",
+            "match" => "#^\\.(status|shares)[ \t]*#iu",
             "command" => function($originalSender, $answer, $to, $matches){
                 global $database;
 

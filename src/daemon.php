@@ -10,7 +10,8 @@ require_once __DIR__ . "/../vendor/autoload.php";
 
 require_once __DIR__ . "/constants.php";
 
-$database = new Database($argv[1]);
+$api = new P2PoolAPI(new Database($argv[1]), "/api");
+$database = $api->getDatabase();
 
 $tip = $database->getChainTip();
 $isFresh = $tip === null;
@@ -18,39 +19,19 @@ $tip = $tip === null ? 1 : $tip->getHeight();
 
 echo "[CHAIN] Last known database tip is $tip\n";
 
-$blockExistsInApi = function (int $index) : bool{
-    $s = (string) $index;
-    $path = "/api/share/" . substr($index, -1) . "/$s";
-    return file_exists($path);
-};
+//$top = Utils::findTopValue([$api, "blockExists"], $tip, SIDECHAIN_PPLNS_WINDOW);
 
-//$top = Utils::findTopValue($blockExistsInApi, $tip, SIDECHAIN_PPLNS_WINDOW);
-
-$startFrom = $isFresh ? Utils::findBottomValue($blockExistsInApi, 1, SIDECHAIN_PPLNS_WINDOW) : $tip;
-
-/**
- * @param int $index
- * @param UncleBlock[] $uncles
- * @return Block
- * @throws \Exception
- */
-function get_block_from_disk(int $index, array &$uncles = []) : Block {
-    global $database;
-    $s = (string) $index;
-    $path = "/api/share/" . substr($index, -1) . "/$s";
-    $data = json_decode(file_get_contents($path), false);
-
-    return Block::fromJSONObject($database, $data, $uncles);
-}
+$startFrom = $isFresh ? Utils::findBottomValue([$api, "blockExists"], 1, SIDECHAIN_PPLNS_WINDOW) : $tip;
 
 if($isFresh){
     $uncles = [];
-    $block = get_block_from_disk($startFrom, $uncles);
+    $block = $api->getShareEntry($startFrom, $uncles);
     $database->insertBlock($block);
     foreach ($uncles as $uncle){
         $database->insertUncleBlock($uncle);
     }
 }
+//TODO: handle jumps in blocks (missing data)
 
 $knownTip = $startFrom;
 
@@ -60,14 +41,14 @@ $runs = 0;
 
 do{
     ++$runs;
-    $disk_tip = get_block_from_disk($knownTip);
+    $disk_tip = $api->getShareEntry($knownTip);
     $db_tip = $database->getBlockByHeight($knownTip);
 
     if($db_tip->getId() !== $disk_tip->getId()){ //Reorg has happened, delete old values
         echo "[REORG] Reorg happened, deleting blocks to match from height ".$db_tip->getHeight()."\n";
         for($h = $knownTip; $h > 0; --$h){
             $db_block = $database->getBlockByHeight($h);
-            $disk_block = get_block_from_disk($h);
+            $disk_block = $api->getShareEntry($h);
 
             if($db_block->getPreviousId() === $disk_block->getPreviousId()){
                 echo "[REORG] Found matching head " . $db_block->getPreviousId() . " at height ".($db_block->getHeight() - 1)."\n";
@@ -83,9 +64,9 @@ do{
 
     $database->insertBlock($disk_tip); // Update found status?
 
-    for($h = $knownTip + 1; $blockExistsInApi($h); ++$h){
+    for($h = $knownTip + 1; $api->blockExists($h); ++$h){
         $uncles = [];
-        $disk_block = get_block_from_disk($h, $uncles);
+        $disk_block = $api->getShareEntry($h, $uncles);
         $prev_block = $database->getBlockByHeight($h - 1);
         if($disk_block->getPreviousId() !== $prev_block->getId()){
             echo "[CHAIN] Possible reorg occurred, aborting insertion at height $h: prev id ".$disk_block->getPreviousId()." != id ".$prev_block->getId()."\n";
