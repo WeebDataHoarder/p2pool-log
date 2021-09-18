@@ -187,7 +187,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                     $cummDiff = gmp_add($cummDiff, gmp_init($b->getProofDifficulty(), 16));
                 }*/
 
-                $current_effort = gmp_intval(gmp_div(gmp_mul(gmp_sub($api->getPoolStats()->pool_statistics->totalHashes, $api->getPoolBlocks()[0]->totalHashes), 100000), $global_diff)) / 100000;
+                $current_effort = gmp_intval(gmp_div(gmp_mul(gmp_sub($api->getPoolStats()->pool_statistics->totalHashes, $api->getPoolBlocks()[0]->totalHashes), 100000), $global_diff)) / 1000;
 
                 $effort = FORMAT_BOLD;
                 if($current_effort <= 0){
