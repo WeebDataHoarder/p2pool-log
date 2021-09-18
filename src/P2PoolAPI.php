@@ -15,7 +15,7 @@ class P2PoolAPI{
         $this->db = $database;
         $this->path = realpath($path);
         if(is_dir($this->path)){
-            throw new \Exception("P2PoolAPI path does not exist {$path}");
+            throw new \Exception("P2PoolAPI path does not exist {$path} {$this->path}");
         }
     }
 
