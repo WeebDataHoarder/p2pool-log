@@ -34,21 +34,21 @@ class P2PoolAPI{
      * @return Block|null
      */
     public function getShareEntry(int $height, array &$uncles = []) : ?Block{
-        return Block::fromJSONObject($this->db, json_decode(file_get_contents($this->getBlockPath($height)), true), $uncles);
+        return Block::fromJSONObject($this->db, json_decode(file_get_contents($this->getBlockPath($height)), false), $uncles);
     }
 
     public function getPoolBlocks() : ?object {
-        $ob = json_decode(file_get_contents($this->path . "/pool/blocks"), true);
+        $ob = json_decode(file_get_contents($this->path . "/pool/blocks"), false);
         return is_object($ob) ? $ob : null;
     }
 
     public function getPoolStats() : ?object {
-        $ob = json_decode(file_get_contents($this->path . "/pool/stats"), true);
+        $ob = json_decode(file_get_contents($this->path . "/pool/stats"), false);
         return is_object($ob) ? $ob : null;
     }
 
     public function getNetworkStats() : ?object {
-        $ob = json_decode(file_get_contents($this->path . "/pool/network"), true);
+        $ob = json_decode(file_get_contents($this->path . "/pool/network"), false);
         return is_object($ob) ? $ob : null;
     }
 
