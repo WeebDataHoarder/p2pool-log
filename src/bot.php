@@ -176,7 +176,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 $global_hashrate = gmp_div($global_diff, MAINCHAIN_BLOCK_TIME);
 
                 /** @var Block[] $blocks */
-                $blocks = iterator_to_array($database->getBlocksByQuery('WHERE height > $1 ORDER BY height DESC LIMIT $2', [$tip->getHeight(), $blockCount = (15 * 60) / MAINCHAIN_BLOCK_TIME]));
+                $blocks = iterator_to_array($database->getBlocksByQuery('WHERE height > $1 ORDER BY height DESC LIMIT $2', [$tip->getHeight(), (15 * 60) / MAINCHAIN_BLOCK_TIME]));
                 $timeDiff = end($blocks)->getTimestamp() - reset($blocks)->getTimestamp();
                 $expectedTime = count($blocks) * SIDECHAIN_BLOCK_TIME;
                 $adjustement = ($timeDiff / $expectedTime) * 1000000;
