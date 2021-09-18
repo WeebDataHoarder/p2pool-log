@@ -37,9 +37,12 @@ class P2PoolAPI{
         return Block::fromJSONObject($this->db, json_decode(file_get_contents($this->getBlockPath($height)), false), $uncles);
     }
 
-    public function getPoolBlocks() : ?object {
+    /**
+     * @return object[]
+     */
+    public function getPoolBlocks() : array {
         $ob = json_decode(file_get_contents($this->path . "/pool/blocks"), false);
-        return is_object($ob) ? $ob : null;
+        return is_array($ob) ? $ob : [];
     }
 
     public function getPoolStats() : ?object {
