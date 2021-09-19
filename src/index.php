@@ -42,28 +42,18 @@ function getBlockAsJSONData(P2PoolAPI $api, Block $b, $extraUncleData = false, $
     ];
 
     if($extraCoinbaseOutputData){
-        $tx = $b->isMainFound() ? MoneroCoinbaseTransactionOutputs::fromTransactionId($b->getCoinbaseId()) : null;
+        $tx = $b->isMainFound() ? $api->getDatabase()->getCoinbaseTransaction($b) : null;
         $data["coinbase"]["payouts"] = [];
-        $payouts = $api->getWindowPayouts($b->getHeight(), $b->getCoinbaseReward() === 0 ? ($tx !== null ? $tx->getTotal() : 0) : $b->getCoinbaseReward());
-        if($b->isMainFound() and $tx !== null and count($payouts) !== 0){
-            /** @var Miner[] $miners */
-            $miners = [];
-            foreach ($payouts as $minerId => $amount){
-                $miners[$minerId] = $api->getDatabase()->getMiner($minerId);
-            }
-
-            foreach($tx->matchOutputs($miners, $b->getCoinbasePrivkey(), $payouts) as $minerId => $o){
-                $data["coinbase"]["payouts"][$miners[$minerId]->getAddress()] = [
-                    "amount" => (int) $o->amount,
-                    "index" => (int) $o->index,
-                    "public_key" => $o->key
+        if($b->isMainFound() and $tx !== null){
+            foreach ($tx->getOutputs() as $output){
+                $data["coinbase"]["payouts"][($miner = $api->getDatabase()->getMiner($output->getMiner()))->getAddress()] = [
+                    "amount" => $output->getAmount(),
+                    "index" => $output->getIndex(),
+                    //"public_key" => $tx::getEphemeralPublicKey($tx, $miner, $output->getIndex());
                 ];
             }
-
-            if(count($data["coinbase"]["payouts"]) !== count($miners)){
-                echo "Unmatched amount of payouts on block " . $b->getId() . " :: " . $b->getMainId() . " => expected ". count($miners) ." got " . count($data["coinbase"]["payouts"]) . "\n";
-            }
         }else{
+            $payouts = $api->getWindowPayouts($b->getHeight(), $b->getCoinbaseReward() === 0 ? null : $b->getCoinbaseReward());
             foreach ($payouts as $minerId => $amount){
                 $data["coinbase"]["payouts"][$api->getDatabase()->getMiner($minerId)] = [
                     "amount" => $amount
@@ -274,35 +264,27 @@ $server = new HttpServer(function (ServerRequestInterface $request){
 
         $returnData = [];
         foreach ($api->getDatabase()->getAllFound($limit) as $block){
-            $window_payouts = $api->getWindowPayouts($block->getHeight(), $block->getCoinbaseReward());
+            $o = $api->getDatabase()->getCoinbaseTransactionOutputByMinerId($block->getCoinbaseId(), $miner->getId());
 
-            if(!isset($window_payouts[$miner->getId()])){
+            if($o === null){
                 continue;
             }
 
-            $o = MoneroCoinbaseTransactionOutputs::fromTransactionId($block->getCoinbaseId());
-            if($o !== null){
-                $outputs = $o->matchOutputs([$miner], $block->getCoinbasePrivkey(), $window_payouts);
-
-                if(isset($outputs[$miner->getId()])){
-                    $output = $outputs[$miner->getId()];
-                    $returnData[] = [
-                        "id" => $block->getId(),
-                        "height" => $block->getHeight(),
-                        "main" => [
-                            "id" => $block->getMainId(),
-                            "height" => $block->getMainHeight(),
-                        ],
-                        "timestamp" => $block->getTimestamp(),
-                        "coinbase" => [
-                            "id" => $block->getCoinbaseId(),
-                            "reward" => $output->amount,
-                            "private_key" => $block->getCoinbasePrivkey(),
-                            "index" => $output->index
-                        ],
-                    ];
-                }
-            }
+            $returnData[] = [
+                "id" => $block->getId(),
+                "height" => $block->getHeight(),
+                "main" => [
+                    "id" => $block->getMainId(),
+                    "height" => $block->getMainHeight(),
+                ],
+                "timestamp" => $block->getTimestamp(),
+                "coinbase" => [
+                    "id" => $block->getCoinbaseId(),
+                    "reward" => $o->getAmount(),
+                    "private_key" => $block->getCoinbasePrivkey(),
+                    "index" => $o->getIndex()
+                ],
+            ];
         }
 
         return new Response(200, [

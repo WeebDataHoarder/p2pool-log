@@ -220,8 +220,6 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                     return;
                 }
 
-                $foundBlocks = $database->getAllFound(60);
-
 
                 $miners = [];
                 foreach ($subs as $sub) {
@@ -230,41 +228,26 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 }
 
                 $c = 0;
-                foreach ($foundBlocks as $block){
+                foreach ($database->getAllFound(60) as $block){
                     /** @var Block $block */
                     ++$c;
 
-                    $window_payouts = $api->getWindowPayouts($block->getHeight());
-                    $hasMiners = false;
+                    $total = 0;
+                    $minerAmount = [];
                     foreach ($miners as $miner){
-                        if(isset($window_payouts[$miner->getId()])){
-                            $hasMiners = true;
-                            break;
-                        }
+                        $o = $database->getCoinbaseTransactionOutputByMinerId($block->getCoinbaseId(), $miner->getId());
+                        $total += $o !== null ? $o->getAmount() : 0;
+                        $minerAmount[$miner->getId()] = $o !== null ? $o->getAmount() : 0;
                     }
 
-                    if(!$hasMiners){
-                        continue;
-                    }
+                    if($total !== null){
+                        arsort($minerAmount);
+                        reset($minerAmount);
+                        $minerId = key($minerAmount);
+                        $total = bcdiv((string) $total, "1000000000000", 12);
 
-                    //TODO: this can be done with saved reward
-
-                    $o = MoneroCoinbaseTransactionOutputs::fromTransactionId($block->getCoinbaseId());
-                    if($o !== null){
-                        $outputs = $o->matchOutputs($miners, $block->getCoinbasePrivkey());
-                        if(count($outputs) > 0){
-                            $total = 0;
-                            $miner = null;
-                            foreach ($outputs as $minerId => $output){
-                                $miner = $miners[$minerId];
-                                $total += $output->amount;
-                            }
-
-                            $total = bcdiv((string) $total, "1000000000000", 12);
-
-                            sendIRCMessage("Your last payout was ". FORMAT_COLOR_ORANGE . FORMAT_BOLD . $total . " XMR".FORMAT_RESET." on block ". FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET ." ".time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://xmrchain.net/block/".$block->getMainHeight()." :: Verify payout https://p2pool.observer/api/prove/".$block->getHeight()."/" . $miner->getId(), $answer);
-                            return;
-                        }
+                        sendIRCMessage("Your last payout was ". FORMAT_COLOR_ORANGE . FORMAT_BOLD . $total . " XMR".FORMAT_RESET." on block ". FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET ." ".time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://xmrchain.net/block/".$block->getMainHeight()." :: Verify payout https://p2pool.observer/p/".$block->getHeight()."/" . $minerId, $answer);
+                        return;
                     }
                 }
 

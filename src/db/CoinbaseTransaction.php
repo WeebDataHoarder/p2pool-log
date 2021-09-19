@@ -52,6 +52,14 @@ class CoinbaseTransaction{
         return $this->outputs;
     }
 
+    public function getReward() : int{
+        $total = 0;
+        foreach ($this->getOutputs() as $output){
+            $total += $output->getAmount();
+        }
+        return $total;
+    }
+
     /**
      * @param int $index
      * @return CoinbaseTransactionOutput|null
