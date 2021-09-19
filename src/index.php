@@ -42,7 +42,7 @@ function getBlockAsJSONData(P2PoolAPI $api, Block $b, $extraUncleData = false, $
     ];
 
     if($extraCoinbaseOutputData){
-        $tx = $b->isMainFound() ? CoinbaseTransactionOutputs::fromTransactionId($b->getCoinbaseId()) : null;
+        $tx = $b->isMainFound() ? MoneroCoinbaseTransactionOutputs::fromTransactionId($b->getCoinbaseId()) : null;
         $data["coinbase"]["payouts"] = [];
         $payouts = $api->getWindowPayouts($b->getHeight(), $b->getCoinbaseReward() === 0 ? ($tx !== null ? $tx->getTotal() : 0) : $b->getCoinbaseReward());
         if($b->isMainFound() and $tx !== null and count($payouts) !== 0){
@@ -280,7 +280,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
                 continue;
             }
 
-            $o = CoinbaseTransactionOutputs::fromTransactionId($block->getCoinbaseId());
+            $o = MoneroCoinbaseTransactionOutputs::fromTransactionId($block->getCoinbaseId());
             if($o !== null){
                 $outputs = $o->matchOutputs([$miner], $block->getCoinbasePrivkey(), $window_payouts);
 

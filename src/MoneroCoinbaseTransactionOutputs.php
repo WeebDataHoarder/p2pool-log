@@ -5,10 +5,10 @@ namespace p2pool;
 use MoneroIntegrations\MoneroPhp\Cryptonote;
 use p2pool\db\Miner;
 
-class CoinbaseTransactionOutputs{
+class MoneroCoinbaseTransactionOutputs{
     private array $outputs = [];
 
-    /** @var CoinbaseTransactionOutputs[] */
+    /** @var MoneroCoinbaseTransactionOutputs[] */
     private static array $cache = [];
 
     /**
@@ -33,7 +33,9 @@ class CoinbaseTransactionOutputs{
         }
 
 
-        foreach ($this->outputs as $o){
+        $outputs = $this->outputs;
+
+        foreach ($outputs as $i => $o){
             foreach ($miners as $ix => $miner){
                 $isValidHint = isset($hint[$miner->getId()]) and abs($hint[$miner->getId()] - (int) $o->amount) > 2;
                 if(count($hint) !== 0 and !$isValidHint){
@@ -49,12 +51,31 @@ class CoinbaseTransactionOutputs{
                 ){
                     $matched[$miner->getId()] = clone $o;
 
+                    unset($outputs[$i]);
                     unset($miners[$ix]);
                     unset($hint[$ix]);
                     break;
                 }
             }
 
+        }
+
+        //Match missed items if equal amounts exist on each side
+        if(count($outputs) === count($miners)){
+            foreach ($miners as $ix => $miner){
+                $ma = $miner->getMoneroAddress();
+                foreach ($outputs as $i => $o){
+
+                    if($ma->getEphemeralPublicKey($tx_privkey, $o->index) === $o->key){
+                        $matched[$miner->getId()] = clone $o;
+
+                        unset($outputs[$i]);
+                        unset($miners[$ix]);
+                        unset($hint[$ix]);
+                        break;
+                    }
+                }
+            }
         }
 
         return $matched;
@@ -68,12 +89,12 @@ class CoinbaseTransactionOutputs{
         return $total;
     }
 
-    public static function fromTransactionId($txId): ?CoinbaseTransactionOutputs {
+    public static function fromTransactionId($txId): ?MoneroCoinbaseTransactionOutputs {
         if(isset(static::$cache[$txId])){
             return static::$cache[$txId];
         }else if (file_exists($path = "/cache/tx_{$txId}.json")){
             $outputs = json_decode(file_get_contents($path));
-            $o = new CoinbaseTransactionOutputs();
+            $o = new MoneroCoinbaseTransactionOutputs();
             $o->outputs = $outputs;
             return static::$cache[$txId] = $o;
         }
@@ -94,7 +115,7 @@ class CoinbaseTransactionOutputs{
                     ];
             }
 
-            $o = new CoinbaseTransactionOutputs();
+            $o = new MoneroCoinbaseTransactionOutputs();
             $o->outputs = $outputs;
             file_put_contents($path, json_encode($o->outputs));
             return static::$cache[$txId] = $o;

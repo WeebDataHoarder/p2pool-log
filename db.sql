@@ -68,7 +68,19 @@ CREATE TABLE subscriptions (
     FOREIGN KEY (miner) REFERENCES miners (id)
 );
 
+CREATE TABLE coinbase_outputs (
+  id varchar NOT NULL, -- coinbase tx id
+  index int NOT NULL,
+  miner bigint NOT NULL,
+  amount bigint NOT NULL,
+  PRIMARY KEY (id, index),
+  FOREIGN KEY (miner) REFERENCES miners (id)
+  -- FOREIGN KEY (id) REFERENCES blocks (coinbase_id)
+);
+
+CREATE INDEX blocks_coinbase_id_idx ON blocks (coinbase_id);
 CREATE INDEX blocks_miner_idx ON blocks (miner);
+CREATE INDEX uncles_coinbase_id_idx ON uncles (coinbase_id);
 CREATE INDEX uncles_height_idx ON uncles (height);
 CREATE INDEX uncles_parent_id_idx ON uncles (parent_id);
 CREATE INDEX uncles_main_id_idx ON uncles (main_id);
@@ -77,3 +89,6 @@ CREATE INDEX uncles_miner_idx ON uncles (miner);
 
 CREATE INDEX subscriptions_miner_idx ON subscriptions (miner);
 CREATE INDEX nick_miner_idx ON subscriptions (nick);
+
+CREATE INDEX coinbase_outputs_id_idx ON coinbase_outputs (id);
+CREATE INDEX coinbase_outputs_miner_idx ON coinbase_outputs (miner);

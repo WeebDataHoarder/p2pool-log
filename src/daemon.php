@@ -3,7 +3,10 @@
 namespace p2pool;
 
 use p2pool\db\Block;
+use p2pool\db\CoinbaseTransaction;
+use p2pool\db\CoinbaseTransactionOutput;
 use p2pool\db\Database;
+use p2pool\db\Miner;
 use p2pool\db\UncleBlock;
 
 require_once __DIR__ . "/../vendor/autoload.php";
@@ -39,6 +42,43 @@ echo "[CHAIN] Starting tip from height $knownTip\n";
 
 $runs = 0;
 
+function processFoundBlockWithTransaction(Block $b, MoneroCoinbaseTransactionOutputs $tx){
+    global $api;
+    if($api->getDatabase()->coinbaseTransactionExists($b)){
+        return true;
+    }
+
+    $payout_hint = $api->getWindowPayouts($b->getHeight(), $b->getCoinbaseReward());
+    /** @var Miner[] $miners */
+    $miners = [];
+    foreach ($payout_hint as $minerId => $amount){
+        $miners[$minerId] = $api->getDatabase()->getMiner($minerId);
+    }
+
+    $outputs = $tx->matchOutputs($miners, $b->getCoinbasePrivkey(), $payout_hint);
+    if(count($outputs) === count($miners)){
+        $new_outputs = [];
+        foreach ($outputs as $minerId => $o){
+            $new_outputs[(int) $o->index] = new CoinbaseTransactionOutput($b->getCoinbaseId(), $o->index, $o->amount, $minerId);
+        }
+
+        $coinbaseOutput = new CoinbaseTransaction($b->getCoinbaseId(), $b->getCoinbasePrivkey(), $new_outputs);
+        return $api->getDatabase()->insertCoinbaseTransaction($coinbaseOutput);
+    }
+
+    return false;
+}
+
+if(iterator_to_array($database->query("SELECT COUNT(*) FROM coinbase_outputs;", []))[0]["count"] == 0){ //No transactions inserted yet!
+    foreach ($database->getAllFound() as $block){
+        echo "[OUTPUT] Trying to insert transaction " . $block->getCoinbaseId() . "\n";
+        $tx = MoneroCoinbaseTransactionOutputs::fromTransactionId($block->getCoinbaseId());
+        if($tx !== null){
+            processFoundBlockWithTransaction($block, $tx);
+        }
+    }
+}
+
 do{
     ++$runs;
     $disk_tip = $api->getShareEntry($knownTip);
@@ -73,25 +113,40 @@ do{
             break;
         }
         echo "[CHAIN] Inserting block " . $disk_block->getId() . " at height " . $disk_block->getHeight() . "\n";
-        if($disk_block->isMainFound()){
-            echo "[CHAIN] BLOCK FOUND! Main height " . $disk_block->getMainHeight() . ", main id " . $disk_block->getMainId() . "\n";
-        }
+
         if($database->insertBlock($disk_block)){
             foreach ($uncles as $uncle){
                 echo "[CHAIN] Inserting uncle " . $uncle->getId() . " @ " . $disk_block->getId() . " at " . $disk_block->getHeight() . "\n";
                 $database->insertUncleBlock($uncle);
+
+                if($uncle->isMainFound()){
+                    echo "[CHAIN] BLOCK FOUND! (uncle) Main height " . $uncle->getMainHeight() . ", main id " . $uncle->getMainId() . "\n";
+                    $tx = MoneroCoinbaseTransactionOutputs::fromTransactionId($uncle->getCoinbaseId());
+                    if($tx !== null){
+                        processFoundBlockWithTransaction($uncle, $tx);
+                    }
+                }
             }
             $knownTip = $disk_block->getHeight();
+        }
+        if($disk_block->isMainFound()){
+            echo "[CHAIN] BLOCK FOUND! Main height " . $disk_block->getMainHeight() . ", main id " . $disk_block->getMainId() . "\n";
+            $tx = MoneroCoinbaseTransactionOutputs::fromTransactionId($disk_block->getCoinbaseId());
+            if($tx !== null){
+                processFoundBlockWithTransaction($disk_block, $tx);
+            }
         }
     }
 
     if($runs % 10 === 0){ //Every 10 seconds or so
-        foreach ($database->getAllFound(6) as $foundBlock){
+        foreach ($database->getAllFound(10) as $foundBlock){
             //Scan last 6 found blocks and set status accordingly if found/not found
-            $tx = CoinbaseTransactionOutputs::fromTransactionId($foundBlock->getCoinbaseId());
+            $tx = MoneroCoinbaseTransactionOutputs::fromTransactionId($foundBlock->getCoinbaseId());
             if($tx === null and (time() - $foundBlock->getTimestamp()) > 120){ // If more than two minutes have passed before we get utxo, remove from found
                 echo "[CHAIN] Block that was found at main height " . $foundBlock->getMainHeight() . ", cannot find output, marking not found\n";
                 $database->setBlockFound($foundBlock->getId(), false);
+            }elseif ($tx !== null){
+                processFoundBlockWithTransaction($foundBlock, $tx);
             }
         }
     }
@@ -101,10 +156,11 @@ do{
 
         foreach ($database->getBlocksByQuery("", []) as $block){
             if($block->isProofHigherThanDifficulty()){
-                $tx = CoinbaseTransactionOutputs::fromTransactionId($block->getCoinbaseId());
+                $tx = MoneroCoinbaseTransactionOutputs::fromTransactionId($block->getCoinbaseId());
                 if($tx !== null){
                     echo "[CHAIN] Marking block ".$block->getMainId()." as found\n";
                     $database->setBlockFound($block->getId(), true);
+                    processFoundBlockWithTransaction($block, $tx);
                 }else if((time() - $block->getTimestamp()) <= 120){
                     echo "[CHAIN] Marking block ".$block->getMainId()." as found for now\n";
                     $database->setBlockFound($block->getId(), true);
@@ -115,10 +171,11 @@ do{
 
         foreach ($database->getUncleBlocksByQuery("", []) as $block){
             if($block->isProofHigherThanDifficulty()){
-                $tx = CoinbaseTransactionOutputs::fromTransactionId($block->getCoinbaseId());
+                $tx = MoneroCoinbaseTransactionOutputs::fromTransactionId($block->getCoinbaseId());
                 if($tx !== null){
                     echo "[CHAIN] Marking block ".$block->getMainId()." as found\n";
                     $database->setBlockFound($block->getId(), true);
+                    processFoundBlockWithTransaction($block, $tx);
                 }else if((time() - $block->getTimestamp()) <= 120){
                     echo "[CHAIN] Marking block ".$block->getMainId()." as found for now\n";
                     $database->setBlockFound($block->getId(), true);

@@ -138,6 +138,7 @@ class Database{
         }
 
         do{
+            pg_query_params($this->db, "DELETE FROM transactions WHERE id = (SELECT coinbase_id FROM blocks WHERE id = $1) OR id = (SELECT coinbase_id FROM uncles WHERE id = $1);", [$block->getId()]);
             pg_query_params($this->db, "DELETE FROM uncles WHERE parent_id = $1;", [$block->getId()]);
             pg_query_params($this->db, "DELETE FROM blocks WHERE id = $1;", [$block->getId()]);
             $block = $this->getBlockByPreviousId($block->getId());
@@ -150,6 +151,84 @@ class Database{
     public function setBlockFound(string $id, bool $found = true) {
         pg_query_params($this->db, "UPDATE blocks SET main_found = $2 WHERE id = $1;", [$id, $found ? 'y' : 'n']);
         pg_query_params($this->db, "UPDATE uncles SET main_found = $2 WHERE id = $1;", [$id, $found ? 'y' : 'n']);
+    }
+
+    /**
+     * @param Block $block
+     * @return bool
+     */
+    public function coinbaseTransactionExists(Block $block): bool{
+        return iterator_to_array($this->query("SELECT COUNT(*) as count FROM coinbase_outputs WHERE id = $1;", [$block->getCoinbaseId()]))[0]["count"] > 9;
+    }
+
+    /**
+     * @param Block $block
+     * @return CoinbaseTransaction|null
+     */
+    public function getCoinbaseTransaction(Block $block): ?CoinbaseTransaction{
+        $outputs = [];
+        foreach ($this->query("SELECT * FROM coinbase_outputs WHERE id = $1;", [$block->getCoinbaseId()]) as $output){
+            $outputs[(int) $output["index"]] = new CoinbaseTransactionOutput($output["id"], $output["index"], $output["amount"], $output["miner"]);
+        }
+
+        return count($outputs) > 0 ? new CoinbaseTransaction($block->getCoinbaseId(), $block->getCoinbasePrivkey(), $outputs) : null;
+    }
+
+    /**
+     * @param string $id
+     * @param int $index
+     * @return CoinbaseTransactionOutput|null
+     */
+    public function getCoinbaseTransactionOutputByIndex(string $id, int $index): ?CoinbaseTransactionOutput{
+        $result = iterator_to_array($this->query("SELECT * FROM coinbase_outputs WHERE id = $1 AND index = $index;", [$id, $index]));
+        if(count($result) > 0){
+            $output = $result[0];
+            return new CoinbaseTransactionOutput($output["id"], $output["index"], $output["amount"], $output["miner"]);
+        }
+        return null;
+    }
+
+    /**
+     * @param string $id
+     * @param int $miner
+     * @return CoinbaseTransactionOutput|null
+     */
+    public function getCoinbaseTransactionOutputByMinerId(string $id, int $miner): ?CoinbaseTransactionOutput{
+        $result = iterator_to_array($this->query("SELECT * FROM coinbase_outputs WHERE id = $1 AND miner = $2;", [$id, $miner]));
+        if(count($result) > 0){
+            $output = $result[0];
+            return new CoinbaseTransactionOutput($output["id"], $output["index"], $output["amount"], $output["miner"]);
+        }
+        return null;
+    }
+
+    public function insertCoinbaseTransaction(CoinbaseTransaction $tx): bool{
+        pg_query($this->db, "BEGIN;");
+
+        $success = true;
+        foreach ($tx->getOutputs() as $o){
+            $success = $this->insertCoinbaseTransactionOutput($o);
+            if(!$success){
+                break;
+            }
+        }
+
+        if($success){
+            pg_query($this->db, "COMMIT;");
+        }else{
+            pg_query($this->db, "ROLLBACK;");
+        }
+
+        return $success;
+    }
+
+    public function insertCoinbaseTransactionOutput(CoinbaseTransactionOutput $output): bool{
+        $o = $this->getCoinbaseTransactionOutputByIndex($output->getId(), $output->getIndex());
+        if($o !== null){
+            return false;
+        }
+
+        return pg_query_params($this->db, "INSERT INTO coinbase_outputs (id, index, miner, amount) VALUES ($1, $2, $3, $4);", [$output->getId(), $output->getIndex(), $output->getMiner(), $output->getAmount()]);
     }
 
     public function insertBlock(Block $b): bool {

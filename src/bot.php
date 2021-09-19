@@ -249,7 +249,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
 
                     //TODO: this can be done with saved reward
 
-                    $o = CoinbaseTransactionOutputs::fromTransactionId($block->getCoinbaseId());
+                    $o = MoneroCoinbaseTransactionOutputs::fromTransactionId($block->getCoinbaseId());
                     if($o !== null){
                         $outputs = $o->matchOutputs($miners, $block->getCoinbasePrivkey());
                         if(count($outputs) > 0){
