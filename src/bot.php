@@ -180,7 +180,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 $timeDiff = end($blocks)->getTimestamp() - reset($blocks)->getTimestamp();
                 $expectedTime = count($blocks) * SIDECHAIN_BLOCK_TIME;
                 $adjustement = ($timeDiff / $expectedTime) * 1000000;
-                $adjusted_diff = gmp_div(gmp_mul($diff, $adjustement), 1000000);
+                $adjusted_diff = gmp_div(gmp_mul($diff, (int) $adjustement), 1000000);
                 $short_hashrate = gmp_div($adjusted_diff, SIDECHAIN_BLOCK_TIME);
                 /*$cummDiff = gmp_init(0);
                 foreach ($blocks as $b){
