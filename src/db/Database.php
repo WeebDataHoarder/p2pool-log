@@ -158,7 +158,7 @@ class Database{
      * @return bool
      */
     public function coinbaseTransactionExists(Block $block): bool{
-        return iterator_to_array($this->query("SELECT COUNT(*) as count FROM coinbase_outputs WHERE id = $1;", [$block->getCoinbaseId()]))[0]["count"] > 9;
+        return iterator_to_array($this->query("SELECT COUNT(*) as count FROM coinbase_outputs WHERE id = $1;", [$block->getCoinbaseId()]))[0]["count"] > 0;
     }
 
     /**
@@ -180,7 +180,7 @@ class Database{
      * @return CoinbaseTransactionOutput|null
      */
     public function getCoinbaseTransactionOutputByIndex(string $id, int $index): ?CoinbaseTransactionOutput{
-        $result = iterator_to_array($this->query("SELECT * FROM coinbase_outputs WHERE id = $1 AND index = $index;", [$id, $index]));
+        $result = iterator_to_array($this->query("SELECT * FROM coinbase_outputs WHERE id = $1 AND index = $2;", [$id, $index]));
         if(count($result) > 0){
             $output = $result[0];
             return new CoinbaseTransactionOutput($output["id"], $output["index"], $output["amount"], $output["miner"]);
