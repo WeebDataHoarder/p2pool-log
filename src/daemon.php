@@ -69,7 +69,7 @@ function processFoundBlockWithTransaction(Block $b, MoneroCoinbaseTransactionOut
     return false;
 }
 
-if(iterator_to_array($database->query("SELECT COUNT(*) FROM coinbase_outputs;", []))[0]["count"] == 0){ //No transactions inserted yet!
+if(iterator_to_array($database->query("SELECT COUNT(*) as count FROM coinbase_outputs;", []))[0]["count"] == 0){ //No transactions inserted yet!
     foreach ($database->getAllFound() as $block){
         echo "[OUTPUT] Trying to insert transaction " . $block->getCoinbaseId() . "\n";
         $tx = MoneroCoinbaseTransactionOutputs::fromTransactionId($block->getCoinbaseId());
