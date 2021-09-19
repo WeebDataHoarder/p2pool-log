@@ -275,7 +275,7 @@ class Database{
         $blocks = $this->getFound($limit);
         $uncles = $this->getFoundUncles($limit);
 
-        for($i = 0; $i < $limit; ++$i){
+        for($i = 0; $limit === null or $i < $limit; ++$i){
             /** @var Block $current */
             $current = null;
 

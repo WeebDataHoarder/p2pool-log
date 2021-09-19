@@ -47,6 +47,7 @@ function processFoundBlockWithTransaction(Block $b, MoneroCoinbaseTransactionOut
     if($api->getDatabase()->coinbaseTransactionExists($b)){
         return true;
     }
+    echo "[OUTPUT] Trying to insert transaction " . $b->getCoinbaseId() . "\n";
 
     $payout_hint = $api->getWindowPayouts($b->getHeight(), $b->getCoinbaseReward());
     /** @var Miner[] $miners */
@@ -71,7 +72,7 @@ function processFoundBlockWithTransaction(Block $b, MoneroCoinbaseTransactionOut
 
 if(iterator_to_array($database->query("SELECT COUNT(*) as count FROM coinbase_outputs;", []))[0]["count"] == 0){ //No transactions inserted yet!
     foreach ($database->getAllFound() as $block){
-        echo "[OUTPUT] Trying to insert transaction " . $block->getCoinbaseId() . "\n";
+        echo "[OUTPUT] Trying to insert old coinbase transaction " . $block->getCoinbaseId() . "\n";
         $tx = MoneroCoinbaseTransactionOutputs::fromTransactionId($block->getCoinbaseId());
         if($tx !== null){
             processFoundBlockWithTransaction($block, $tx);
