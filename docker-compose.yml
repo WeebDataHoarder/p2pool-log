@@ -12,15 +12,63 @@ volumes:
 
 services:
   tor:
-    image: osminogin/tor-simple:0.4.6.7
+    image: goldy/tor-hidden-service:0.4.5.7
+    tmpfs:
+      - /tmp
+    restart: always
+    environment:
+      TOR_SOCKS_PORT: 9050
+      SERVICE1_TOR_SERVICE_HOSTS: 80:site:80
+      SERVICE1_TOR_SERVICE_VERSION: '3'
+      SERVICE2_TOR_SERVICE_KEY: ${TOR_SERVICE_KEY}
+    networks:
+      - p2pool-log
+  api:
+    build:
+      context: ./
+      dockerfile: docker/php/Dockerfile
+    restart: always
+    environment:
+      - MONEROD_RPC_URL=${MONEROD_RPC_URL}
+    depends_on:
+      - db
+      - scraper
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./:/app:ro
+      - cache:/cache:rw
+      - "${API_FOLDER}:/api:ro"
     tmpfs:
       - /tmp
     networks:
       - p2pool-log
+    command: >-
+      php /app/src/index.php "host=db port=5432 dbname=p2pool user=p2pool password=p2pool"
+  site:
+    image: nginx:mainline
+    restart: always
+    volumes:
+      - ./static:/web:ro
+      - ./docker/nginx/snippets/cors.conf:/etc/nginx/snippets/cors.conf:ro
+      - ./docker/nginx/snippets/csp.conf:/etc/nginx/snippets/csp.conf:ro
+      - ./docker/nginx/snippets/security-headers.conf:/etc/nginx/snippets/security-headers.conf:ro
+      - ./docker/nginx/site.conf:/etc/nginx/conf.d/site.conf:ro
+    depends_on:
+      - api
+    tmpfs:
+      - /run
+      - /var/cache/nginx
+      - /tmp
+    networks:
+      - p2pool-log
+    ports:
+      - 8189:80
   scraper:
     build:
-      context: docker/php
-      dockerfile: Dockerfile
+      context: ./
+      dockerfile: docker/php/Dockerfile
     restart: always
     environment:
       - MONEROD_RPC_URL=${MONEROD_RPC_URL}
@@ -41,8 +89,8 @@ services:
       php /app/src/daemon.php "host=db port=5432 dbname=p2pool user=p2pool password=p2pool"
   bot:
     build:
-      context: docker/php
-      dockerfile: Dockerfile
+      context: ./
+      dockerfile: docker/php/Dockerfile
     restart: always
     environment:
       - IRC_SERVER_HOST=${IRC_SERVER_HOST}
@@ -57,6 +105,7 @@ services:
     depends_on:
       - db
       - tor
+      - scraper
     read_only: true
     security_opt:
       - no-new-privileges:true

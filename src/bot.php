@@ -108,7 +108,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
             "permission" => PERMISSION_NONE,
             "match" => "#^\\.(sub|subscribe)[ \t]+(4[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+)[ \t]*#iu",
             "command" => function($originalSender, $answer, $to, $matches){
-                global $database;
+                global $database, $api;
                 $maddress = null;
                 try{
                     $maddress = new MoneroAddress($matches[2]);
@@ -126,7 +126,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 $database->addSubscription($sub);
                 sendIRCMessage("Subscribed your nick to shares found by " . FORMAT_ITALIC . shortenAddress($maddress->getAddress()), $answer);
 
-                $payouts = getWindowPayouts();
+                $payouts = $api->getWindowPayouts();
 
                 $myReward = (($payouts[$miner->getId()] ?? 0) / array_sum($payouts));
                 if($myReward > NOTIFICATION_POOL_SHARE){
@@ -167,7 +167,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 global $database, $api;
 
                 $block = $database->getLastFound();
-                $payouts = getWindowPayouts($block->getHeight());
+                $payouts = $api->getWindowPayouts($block->getHeight());
                 $tip = $database->getChainTip();
 
                 $diff = gmp_init($tip->getDifficulty(), 16);
@@ -211,7 +211,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
             "permission" => PERMISSION_NONE,
             "match" => "#^\\.(payout|payment|last\-payment)[ \t]*#iu",
             "command" => function($originalSender, $answer, $to, $matches){
-                global $database;
+                global $database, $api;
 
                 $subs = $database->getSubscriptionsFromNick($originalSender["user"]);
 
@@ -233,7 +233,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                     /** @var Block $block */
                     ++$c;
 
-                    $window_payouts = getWindowPayouts($block->getHeight());
+                    $window_payouts = $api->getWindowPayouts($block->getHeight());
                     $hasMiners = false;
                     foreach ($miners as $miner){
                         if(isset($window_payouts[$miner->getId()])){
@@ -274,12 +274,12 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
             "permission" => PERMISSION_NONE,
             "match" => "#^\\.(status|shares)[ \t]*#iu",
             "command" => function($originalSender, $answer, $to, $matches){
-                global $database;
+                global $database, $api;
 
                 $subs = $database->getSubscriptionsFromNick($originalSender["user"]);
                 $total = null;
 
-                $payouts = getWindowPayouts();
+                $payouts = $api->getWindowPayouts();
                 $myReward = 0;
 
                 foreach ($subs as $sub){
@@ -356,38 +356,9 @@ function shortenAddress(string $address) : string {
     return substr($address, 0, 10) . "..." . substr($address, -10);
 }
 
-function getWindowPayouts(int $startBlock = null): array {
-    global $database;
-
-    $payouts = [];
-
-    foreach($database->getBlocksInWindow($startBlock) as $block){
-        if(!isset($payouts[$block->getMiner()])){
-            $payouts[$block->getMiner()] = 0;
-        }
-        $payouts[$block->getMiner()] = gmp_add($payouts[$block->getMiner()], gmp_init($block->getDifficulty(), 16));
-    }
-    foreach($database->getUnclesInWindow($startBlock) as $uncle){
-        if(!isset($payouts[$uncle->getMiner()])){
-            $payouts[$uncle->getMiner()] = 0;
-        }
-        $block = $database->getBlockById($uncle->getParentId());
-        //TODO: use proper difficulty
-        $difficulty = $database->getBlockByHeight($uncle->getHeight());
-        $difficulty = $difficulty !== null ? gmp_init($difficulty->getDifficulty(), 16) : 0;
-        list($uncle_penalty, $rem) = gmp_div_qr(gmp_mul($difficulty, SIDECHAIN_UNCLE_PENALTY), 100);
-
-        $payouts[$uncle->getMiner()] = gmp_add($payouts[$uncle->getMiner()], gmp_sub(gmp_init($block->getDifficulty(), 16), $uncle_penalty));
-        if($block !== null){
-            $payouts[$block->getMiner()] = gmp_add($payouts[$block->getMiner()], $uncle_penalty);
-        }
-    }
-
-    return array_map("gmp_intval", $payouts);
-}
-
 function blockFoundMessage(Block $b){
-    $payouts = getWindowPayouts();
+    global $api;
+    $payouts = $api->getWindowPayouts();
 
     sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "BLOCK FOUND:" . FORMAT_RESET . " height " . FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " :: Pool height ". $b->getHeight() ." :: https://xmrchain.net/block/" . $b->getMainHeight() . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners paid" . FORMAT_RESET . " :: Id " . FORMAT_ITALIC . $b->getMainId(), BOT_BLOCKS_FOUND_CHANNEL);
     sendIRCMessage("Paid ".FORMAT_COLOR_ORANGE . FORMAT_BOLD . bcdiv((string) $b->getCoinbaseReward(), "1000000000000", 12) . " XMR".FORMAT_RESET." :: Verify payouts using Tx private key " . FORMAT_ITALIC . $b->getCoinbasePrivkey() . FORMAT_RESET . " :: Payout transaction for block ". FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " https://xmrchain.net/tx/".$b->getCoinbaseId()."", BOT_BLOCKS_FOUND_CHANNEL);
@@ -420,7 +391,8 @@ function getShareWindowPosition(int $miner, int $count = 30): array {
 }
 
 function shareFoundMessage(Block $b, Subscription $sub, Miner $miner, array $uncles = []){
-    $payouts = getWindowPayouts();
+    global $api;
+    $payouts = $api->getWindowPayouts();
 
     $myReward = (($payouts[$miner->getId()] ?? 0) / array_sum($payouts));
     if($myReward > NOTIFICATION_POOL_SHARE and !$b->isMainFound()){ //Disable notifications with more than 20% of hashrate
@@ -435,7 +407,8 @@ function shareFoundMessage(Block $b, Subscription $sub, Miner $miner, array $unc
 }
 
 function uncleFoundMessage(UncleBlock $b, Subscription $sub, Miner $miner){
-    $payouts = getWindowPayouts();
+    global $api;
+    $payouts = $api->getWindowPayouts();
 
     $myReward = (($payouts[$miner->getId()] ?? 0) / array_sum($payouts));
     if($myReward > NOTIFICATION_POOL_SHARE and !$b->isMainFound()){ //Disable notifications with more than 20% of hashrate

@@ -8,7 +8,9 @@
     "monero-integrations/monerophp": "dev-master",
     "ext-curl": "*",
     "ext-bcmath": "*",
-    "ext-gmp": "*"
+    "ext-gmp": "*",
+    "react/event-loop": "^1.2",
+    "react/http": "^1.5"
   },
   "autoload": {
     "psr-4": {

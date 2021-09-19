@@ -77,6 +77,13 @@ class Database{
         return new Miner($res["id"], $res["address"]);
     }
 
+    public function query(string $query, array $params = []) : \Iterator{
+        $result = pg_query_params($this->db, $query, $params);
+        while(($res = pg_fetch_assoc($result)) !== false){
+            yield $res;
+        }
+    }
+
     public function getOrCreateMinerByAddress(string $address) : ?Miner {
         $record = $this->getMinerByAddress($address);
 
@@ -258,21 +265,21 @@ class Database{
 
     /**
      * @param int|null $fromBlock
+     * @param int $WINDOW_SIZE
      * @return \Iterator|Block[]
      */
-    public function getBlocksInWindow(int $fromBlock = null) : \Iterator {
-        $tip = $this->getChainTip();
-        return $this->getBlocksByQuery('WHERE height > ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').' - $1) AND height <= ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').')', [SIDECHAIN_PPLNS_WINDOW]);
+    public function getBlocksInWindow(int $fromBlock = null, int $WINDOW_SIZE = SIDECHAIN_PPLNS_WINDOW) : \Iterator {
+        return $this->getBlocksByQuery('WHERE height > ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').' - $1) AND height <= ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').')', [$WINDOW_SIZE]);
     }
 
     /**
      * @param int $miner
      * @param int|null $fromBlock
+     * @param int $WINDOW_SIZE
      * @return \Iterator|Block[]
      */
-    public function getBlocksByMinerIdInWindow(int $miner, int $fromBlock = null) : \Iterator {
-        $tip = $this->getChainTip();
-        return $this->getBlocksByQuery('WHERE height > ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').' - $1) AND height <= ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').') AND miner = $2', [SIDECHAIN_PPLNS_WINDOW, $miner]);
+    public function getBlocksByMinerIdInWindow(int $miner, int $fromBlock = null, int $WINDOW_SIZE = SIDECHAIN_PPLNS_WINDOW) : \Iterator {
+        return $this->getBlocksByQuery('WHERE height > ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').' - $1) AND height <= ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').') AND miner = $2', [$WINDOW_SIZE, $miner]);
     }
 
     /**
@@ -301,19 +308,21 @@ class Database{
 
     /**
      * @param int|null $fromBlock
+     * @param int $WINDOW_SIZE
      * @return \Iterator|UncleBlock[]
      */
-    public function getUnclesInWindow(int $fromBlock = null) : \Iterator {
-        return $this->getUncleBlocksByQuery('WHERE parent_height > ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').' - $1) AND parent_height <= ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').') AND height > ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').' - $1) AND height <= ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').')', [SIDECHAIN_PPLNS_WINDOW]);
+    public function getUnclesInWindow(int $fromBlock = null, int $WINDOW_SIZE = SIDECHAIN_PPLNS_WINDOW) : \Iterator {
+        return $this->getUncleBlocksByQuery('WHERE parent_height > ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').' - $1) AND parent_height <= ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').') AND height > ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').' - $1) AND height <= ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').')', [$WINDOW_SIZE]);
     }
 
     /**
      * @param int $miner
      * @param int|null $fromBlock
+     * @param int $WINDOW_SIZE
      * @return \Iterator|UncleBlock[]
      */
-    public function getUnclesByMinerIdInWindow(int $miner, int $fromBlock = null) : \Iterator {
-        return $this->getUncleBlocksByQuery('WHERE parent_height > ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').' - $1) AND parent_height <= ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').') AND height > ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').' - $1) AND height <= ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').') AND miner = $2', [SIDECHAIN_PPLNS_WINDOW, $miner]);
+    public function getUnclesByMinerIdInWindow(int $miner, int $fromBlock = null, int $WINDOW_SIZE = SIDECHAIN_PPLNS_WINDOW) : \Iterator {
+        return $this->getUncleBlocksByQuery('WHERE parent_height > ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').' - $1) AND parent_height <= ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').') AND height > ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').' - $1) AND height <= ('.($fromBlock !== null ? $fromBlock : '(SELECT MAX(height) FROM blocks)').') AND miner = $2', [$WINDOW_SIZE, $miner]);
     }
 }
 

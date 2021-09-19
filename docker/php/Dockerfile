@@ -14,4 +14,8 @@ RUN groupadd -r php && useradd -r -g php php && \
 
 WORKDIR /app
 
+COPY ./ /app
+
+RUN composer update
+
 USER php
