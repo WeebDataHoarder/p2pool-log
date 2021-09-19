@@ -225,7 +225,8 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
 
                 $miners = [];
                 foreach ($subs as $sub) {
-                    $miners[] = $database->getMiner($sub->getMiner());
+                    $m = $database->getMiner($sub->getMiner());
+                    $miners[$m->getId()] = $m;
                 }
 
                 $c = 0;
@@ -253,13 +254,15 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                         $outputs = $o->matchOutputs($miners, $block->getCoinbasePrivkey());
                         if(count($outputs) > 0){
                             $total = 0;
-                            foreach ($outputs as $output){
+                            $miner = null;
+                            foreach ($outputs as $minerId => $output){
+                                $miner = $miners[$minerId];
                                 $total += $output->amount;
                             }
 
                             $total = bcdiv((string) $total, "1000000000000", 12);
 
-                            sendIRCMessage("Your last payout was ". FORMAT_COLOR_ORANGE . FORMAT_BOLD . $total . " XMR".FORMAT_RESET." on block ". FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET ." ".time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://xmrchain.net/block/".$block->getMainHeight()." :: Tx private key ". FORMAT_ITALIC . $block->getCoinbasePrivkey() . FORMAT_RESET ." :: https://xmrchain.net/tx/".$block->getCoinbaseId(), $answer);
+                            sendIRCMessage("Your last payout was ". FORMAT_COLOR_ORANGE . FORMAT_BOLD . $total . " XMR".FORMAT_RESET." on block ". FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET ." ".time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://xmrchain.net/block/".$block->getMainHeight()." :: Verify payout https://p2pool.observer/api/payout/".$block->getHeight()."/" . $miner->getId(), $answer);
                             return;
                         }
                     }
