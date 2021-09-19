@@ -228,7 +228,7 @@ class Database{
             return false;
         }
 
-        return pg_query_params($this->db, "INSERT INTO coinbase_outputs (id, index, miner, amount) VALUES ($1, $2, $3, $4);", [$output->getId(), $output->getIndex(), $output->getMiner(), $output->getAmount()]);
+        return pg_query_params($this->db, "INSERT INTO coinbase_outputs (id, index, miner, amount) VALUES ($1, $2, $3, $4);", [$output->getId(), $output->getIndex(), $output->getMiner(), $output->getAmount()]) !== false;
     }
 
     public function insertBlock(Block $b): bool {
