@@ -138,7 +138,7 @@ class Database{
         }
 
         do{
-            pg_query_params($this->db, "DELETE FROM transactions WHERE id = (SELECT coinbase_id FROM blocks WHERE id = $1) OR id = (SELECT coinbase_id FROM uncles WHERE id = $1);", [$block->getId()]);
+            pg_query_params($this->db, "DELETE FROM coinbase_outputs WHERE id = (SELECT coinbase_id FROM blocks WHERE id = $1) OR id = (SELECT coinbase_id FROM uncles WHERE id = $1);", [$block->getId()]);
             pg_query_params($this->db, "DELETE FROM uncles WHERE parent_id = $1;", [$block->getId()]);
             pg_query_params($this->db, "DELETE FROM blocks WHERE id = $1;", [$block->getId()]);
             $block = $this->getBlockByPreviousId($block->getId());
