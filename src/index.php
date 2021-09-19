@@ -295,7 +295,25 @@ $server = new HttpServer(function (ServerRequestInterface $request){
         ], json_encode($returnData, JSON_UNESCAPED_SLASHES | ($isKnownBrowser ? JSON_PRETTY_PRINT : 0)));
     }
 
-    if(preg_match("#^/api/prove/(?P<height>[0-9]+)/(?P<miner>[0-9]+)$#", $request->getUri()->getPath(), $matches) > 0){
+    if(preg_match("#^/api/redirect/block/(?P<main_height>[0-9]+)$#", $request->getUri()->getPath(), $matches) > 0){
+        return new Response(302, [
+            "Location" => "https://xmrchain.net/block/".$matches["main_height"]
+        ]);
+    }
+
+    if(preg_match("#^/api/redirect/coinbase/(?P<height>[0-9]+)$#", $request->getUri()->getPath(), $matches) > 0){
+        $b = $api->getDatabase()->getBlockByHeight($matches["height"]);
+        if($b === null){
+            return new Response(404, [
+                "Content-Type" => "application/json; charset=utf-8"
+            ], json_encode(["error" => "not_found"]));
+        }
+        return new Response(302, [
+            "Location" => "https://xmrchain.net/tx/".$b->getCoinbaseId()
+        ]);
+    }
+
+    if(preg_match("#^/api/redirect/prove/(?P<height>[0-9]+)/(?P<miner>[0-9]+)$#", $request->getUri()->getPath(), $matches) > 0){
         $b = $api->getDatabase()->getBlockByHeight($matches["height"]);
         $miner = $api->getDatabase()->getMiner($matches["miner"]);
         if($b === null or $miner === null){
