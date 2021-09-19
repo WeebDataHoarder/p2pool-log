@@ -97,6 +97,9 @@ $server = new HttpServer(function (ServerRequestInterface $request){
         return new Response(403);
     }
 
+    //Use this to provide unprettified json
+    $isKnownBrowser = count($request->getHeader("user-agent")) > 0 and preg_match("#(mozilla)#i", $request->getHeader("user-agent")[0]) > 0;
+
     if(preg_match("#^/api/miner_info/(?P<miner>[0-9]+|4[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+)$#", $request->getUri()->getPath(), $matches) > 0){
         $miner = (strlen($matches["miner"]) > 10 and $matches["miner"][0] === "4") ? $api->getDatabase()->getMinerByAddress($matches["miner"]) : null;
         if($miner === null){
@@ -125,7 +128,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
 
         return new Response(200, [
             "Content-Type" => "application/json; charset=utf-8"
-        ], json_encode($returnData, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+        ], json_encode($returnData, JSON_UNESCAPED_SLASHES | ($isKnownBrowser ? JSON_PRETTY_PRINT : 0)));
     }
 
     if(preg_match("#^/api/shares_in_range_window/(?P<miner>[0-9]+|4[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+)$#", $request->getUri()->getPath(), $matches) > 0){
@@ -188,7 +191,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
 
         return new Response(200, [
             "Content-Type" => "application/json; charset=utf-8"
-        ], json_encode($returnData, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+        ], json_encode($returnData, JSON_UNESCAPED_SLASHES | ($isKnownBrowser ? JSON_PRETTY_PRINT : 0)));
     }
 
     if(preg_match("#^/api/shares_in_current_window/(?P<miner>[0-9]+|4[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+)$#", $request->getUri()->getPath(), $matches) > 0){
@@ -246,7 +249,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
 
         return new Response(200, [
             "Content-Type" => "application/json; charset=utf-8"
-        ], json_encode($returnData, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+        ], json_encode($returnData, JSON_UNESCAPED_SLASHES | ($isKnownBrowser ? JSON_PRETTY_PRINT : 0)));
     }
 
     if(preg_match("#^/api/payouts/(?P<miner>[0-9]+|4[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+)$#", $request->getUri()->getPath(), $matches) > 0){
@@ -289,7 +292,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
 
         return new Response(200, [
             "Content-Type" => "application/json; charset=utf-8"
-        ], json_encode($returnData, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+        ], json_encode($returnData, JSON_UNESCAPED_SLASHES | ($isKnownBrowser ? JSON_PRETTY_PRINT : 0)));
     }
 
     if(preg_match("#^/api/prove/(?P<height>[0-9]+)/(?P<miner>[0-9]+)$#", $request->getUri()->getPath(), $matches) > 0){
@@ -330,7 +333,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
 
         return new Response(200, [
             "Content-Type" => "application/json; charset=utf-8"
-        ], json_encode($returnData, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+        ], json_encode($returnData, JSON_UNESCAPED_SLASHES | ($isKnownBrowser ? JSON_PRETTY_PRINT : 0)));
     }
 
     if(preg_match("#^/api/block_by_(?P<by>id|height)/(?P<block>[0-9a-f]{64}|[0-9]+)(?P<kind>|/raw|/info)$#", $request->getUri()->getPath(), $matches) > 0){
@@ -364,7 +367,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
             default:
                 return new Response(200, [
                     "Content-Type" => "application/json; charset=utf-8"
-                ], json_encode(getBlockAsJSONData($api, $b, true, isset($params["coinbase"])), JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+                ], json_encode(getBlockAsJSONData($api, $b, true, isset($params["coinbase"])), JSON_UNESCAPED_SLASHES | ($isKnownBrowser ? JSON_PRETTY_PRINT : 0)));
         }
     }
 
