@@ -25,7 +25,7 @@ class P2PoolAPI{
     }
 
     private function getRawBlockPath(string $id) : string{
-        return $this->path . "/blocs/" . $id[0] . "/$id";
+        return $this->path . "/blocks/" . $id[0] . "/$id";
     }
 
     public function blockExists(int $height) : bool{
