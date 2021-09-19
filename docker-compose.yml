@@ -20,7 +20,7 @@ services:
       TOR_SOCKS_PORT: 9050
       SERVICE1_TOR_SERVICE_HOSTS: 80:site:80
       SERVICE1_TOR_SERVICE_VERSION: '3'
-      SERVICE2_TOR_SERVICE_KEY: ${TOR_SERVICE_KEY}
+      SERVICE1_TOR_SERVICE_KEY: ${TOR_SERVICE_KEY}
     networks:
       - p2pool-log
   api:
