@@ -471,8 +471,9 @@ $checks = [
 
             $ch = curl_init("https://xmrvsbeast.com/p2pool/");
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5_HOSTNAME);
-            curl_setopt($ch, CURLOPT_PROXY, "tor:9050");
+            curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+            //curl_setopt($ch, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5_HOSTNAME);
+            //curl_setopt($ch, CURLOPT_PROXY, "tor:9050");
             $ret = curl_exec($ch);
 
             $timeRemains = trim(getString($ret, '>Raffle Round Time Remaining:', '</'), "\n\t .");
