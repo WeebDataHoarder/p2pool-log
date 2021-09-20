@@ -59,7 +59,7 @@ function sendIRCMessage($message, $to, $async = false){
 
     $line = "$cmd $to :$message";
 
-    if($async){
+    if(!$async){
         echo "[RAWOUT] $line\n";
         fwrite($socket, "$line\r\n");
         fflush($socket);
@@ -601,6 +601,8 @@ function handleCheck(){
     }
 
     $lastTip = $newTip;
+
+    handleIRCMessageQueue();
 
     global $checks;
     foreach ($checks as $i => &$check){
