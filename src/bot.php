@@ -389,7 +389,7 @@ function shareFoundMessage(Block $b, Subscription $sub, Miner $miner, array $unc
 
     $share_count = array_sum($positions[0]);
     $uncle_count = array_sum($positions[1]);
-    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "SHARE FOUND:" . FORMAT_RESET . " Pool height " . FORMAT_COLOR_RED . $b->getHeight() . FORMAT_RESET . " ".(count($uncles) > 0 ? ":: Includes " . count($uncles) . " uncle(s) " : "").($b->isMainFound() ? ":: ".FORMAT_BOLD. FORMAT_COLOR_LIGHT_GREEN ." MINED MAINCHAN BLOCK " . $b->getMainHeight() . FORMAT_RESET . " " : "").":: Your shares $share_count (+$uncle_count uncles) ~$myReward% :: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
+    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "SHARE FOUND:" . FORMAT_RESET . " Pool height " . FORMAT_COLOR_RED . $b->getHeight() . FORMAT_RESET . " ".(count($uncles) > 0 ? ":: Includes " . count($uncles) . " uncle(s) for extra ".SIDECHAIN_UNCLE_PENALTY."% of their value " : "").($b->isMainFound() ? ":: ".FORMAT_BOLD. FORMAT_COLOR_LIGHT_GREEN ." MINED MAINCHAN BLOCK " . $b->getMainHeight() . FORMAT_RESET . " " : "").":: Your shares $share_count (+$uncle_count uncles) ~$myReward% :: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
 }
 
 function uncleFoundMessage(UncleBlock $b, Subscription $sub, Miner $miner){
