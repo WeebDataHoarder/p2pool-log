@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<div style="text-align: center; font-weight: bold;">
+{% if refresh %}
+<a href="/">Autorefresh is ON ({{ refresh }} s)</a>
+{% else %}
+<a href="/?refresh">Autorefresh is OFF</a>
+{% endif %}
+</div>
+
+<div style="text-align: center">
+    In development, more to be soon here.
+</div>
+
+<div style="text-align: center">
+    <h2>Recent Monero blocks found by P2Pool miners</h2>
+    <table class="center" style="table-layout: fixed; width: calc(8em + 8em + 8em + 12em + 10em + 7em + 12em + 28em)">
+        <tr>
+            <th style="width: 8em;">Monero Height</th>
+            <th style="width: 8em;">P2Pool Height</th>
+            <th style="width: 8em;">Time</th>
+            <th style="width: 12em;" title="The P2Pool miner who found this block">Miner</th>
+            <th style="width: 10em;">Reward</th>
+            <th style="width: 7em;" title="Number of miners that got paid on the Coinbase Transaction">Outputs</th>
+            <th style="width: 12em;">Coinbase Transaction</th>
+            <th style="width: 28em;" title="You can use this Private Key to verify payouts sent by P2Pool on each block through the Coinbase Transaction">Coinbase Tx Private Key</th>
+        </tr>
+        {% for b in blocks_found %}
+        <tr>
+            <th title="{{ b.main.id }}"><a href="/b/{{ b.main.height|benc }}">{{ b.main.height }}</a></th>
+            <th title="{{ b.id }}">{{ b.height }}</th>
+            <td title="{{ b.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ b.timestamp)|time_elapsed_string(false) }}</td>
+            <td title="{{ b.miner }}" class="mono small"><a href="/miner?address={{ b.miner }}">{{ b.miner|slice(0, 10) ~ "..." ~ b.miner|slice(-10) }}</a></td>
+            <td class="small">{{ b.coinbase.reward|bcdiv("1000000000000", 12) }} XMR</td>
+            <td>{{ b.coinbase.payouts|length }}</td>
+            <td title="{{ b.coinbase.id }}" class="mono small"><a href="/c/{{ b.height|benc }}">{{ b.coinbase.id|slice(0, 10) ~ "..." ~ b.coinbase.id|slice(-10) }}</a></td>
+            <td class="mono smaller">{{ b.coinbase.private_key }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div style="text-align: center">
+    <form action="/miner" method="get">
+        <h2>Lookup miner statistics</h2>
+        <div>
+            <label for="miner-address">Payout Monero address</label><br/>
+            <input type="text" name="address" id="miner-address" placeholder="4AeEwC2Uik2Zv4uooAUWjQb2ZvcLDBmLXN4rzSn3wjBoY8EKfNkSUqeg5PxcnWTwB1b2V39PDwU9gaNE5SnxSQPYQyoQtr7" size="96" class="mono"/>
+        </div>
+        <div style="margin-top: 10px">
+            <input type="submit" value="Lookup" style="width: 20em;"/>
+        </div>
+    </form>
+</div>
+
+
+{% endblock %}

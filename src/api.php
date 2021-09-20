@@ -46,9 +46,10 @@ function getBlockAsJSONData(P2PoolAPI $api, Block $b, $extraUncleData = false, $
         $data["coinbase"]["payouts"] = [];
         if($b->isMainFound() and $tx !== null){
             foreach ($tx->getOutputs() as $output){
-                $data["coinbase"]["payouts"][($miner = $api->getDatabase()->getMiner($output->getMiner()))->getAddress()] = [
+                $data["coinbase"]["payouts"][$output->getIndex()] = [
                     "amount" => $output->getAmount(),
                     "index" => $output->getIndex(),
+                    "address" => ($miner = $api->getDatabase()->getMiner($output->getMiner()))->getAddress(),
                     //"public_key" => $tx::getEphemeralPublicKey($tx, $miner, $output->getIndex());
                 ];
             }
@@ -100,9 +101,52 @@ $server = new HttpServer(function (ServerRequestInterface $request){
     //Use this to provide unprettified json
     $isKnownBrowser = count($request->getHeader("user-agent")) > 0 and preg_match("#(mozilla)#i", $request->getHeader("user-agent")[0]) > 0;
 
+    if(preg_match("#^/api/pool_info$#", $request->getUri()->getPath(), $matches) > 0){
+        $tip = $api->getDatabase()->getChainTip();
+
+
+        $block_count = 0;
+        $uncle_count = 0;
+        $miners = [];
+        foreach ($api->getDatabase()->getBlocksInWindow($tip->getHeight()) as $b){
+            $block_count++;
+            @$miners[$b->getMiner()]++;
+            foreach ($api->getDatabase()->getUnclesByParentId($b->getId()) as $u){
+                if($tip->getHeight() - $u->getHeight() > SIDECHAIN_PPLNS_WINDOW){ //TODO: check this check is correct :)
+                    continue;
+                }
+                ++$uncle_count;
+                @$miners[$u->getMiner()]++;
+            }
+        }
+
+        $returnData = [
+            "sidechain" => [
+                "id" => $tip->getId(),
+                "height" => $tip->getHeight(),
+                "difficulty" => $tip->getDifficulty(),
+                "timestamp" => $tip->getTimestamp(),
+                "window" => [
+                    "miners" => count($miners),
+                    "blocks" => $block_count,
+                    "uncles" => $uncle_count,
+                ]
+            ],
+            "mainchain" => [
+                "id" => $tip->getMinerMainId(),
+                "height" => $tip->getMainHeight() - 1,
+                "difficulty" => $tip->getMinerMainDifficulty()
+            ]
+        ];
+
+        return new Response(200, [
+            "Content-Type" => "application/json; charset=utf-8"
+        ], json_encode($returnData, JSON_UNESCAPED_SLASHES | ($isKnownBrowser ? JSON_PRETTY_PRINT : 0)));
+    }
+
     if(preg_match("#^/api/miner_info/(?P<miner>[0-9]+|4[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+)$#", $request->getUri()->getPath(), $matches) > 0){
         $miner = (strlen($matches["miner"]) > 10 and $matches["miner"][0] === "4") ? $api->getDatabase()->getMinerByAddress($matches["miner"]) : null;
-        if($miner === null){
+        if($miner === null and preg_match("#^[0-9]+$#", $matches["miner"]) > 0){
             $miner = $api->getDatabase()->getMiner((int) $matches["miner"]);
         }
         if($miner === null){
@@ -133,7 +177,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
 
     if(preg_match("#^/api/shares_in_range_window/(?P<miner>[0-9]+|4[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+)$#", $request->getUri()->getPath(), $matches) > 0){
         $miner = (strlen($matches["miner"]) > 10 and $matches["miner"][0] === "4") ? $api->getDatabase()->getMinerByAddress($matches["miner"]) : null;
-        if($miner === null){
+        if($miner === null and preg_match("#^[0-9]+$#", $matches["miner"]) > 0){
             $miner = $api->getDatabase()->getMiner((int) $matches["miner"]);
         }
         if($miner === null){
@@ -145,7 +189,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
         parse_str($request->getUri()->getQuery(), $params);
 
         $window = isset($params["window"]) ? (int) min(SIDECHAIN_PPLNS_WINDOW * 4, $params["window"]) : SIDECHAIN_PPLNS_WINDOW;
-        $from = isset($params["from"]) ? (int) min(0, $params["from"]) : null;
+        $from = isset($params["from"]) ? (int) max(0, $params["from"]) : null;
 
         $returnData = [
 
@@ -155,6 +199,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
             $r = [
                 "id" => $block->getId(),
                 "height" => $block->getHeight(),
+                "timestamp" => $block->getTimestamp(),
                 "weight" => gmp_intval($weight = gmp_init($block->getDifficulty(), 16)),
                 "uncles" => []
             ];
@@ -185,6 +230,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
                 ],
                 "id" => $uncle->getId(),
                 "height" => $uncle->getHeight(),
+                "timestamp" => $uncle->getTimestamp(),
                 "weight" => gmp_intval(gmp_div(gmp_mul(gmp_init($uncle->getDifficulty(), 16), 100 - SIDECHAIN_UNCLE_PENALTY), 100))
             ];
         }
@@ -196,7 +242,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
 
     if(preg_match("#^/api/shares_in_current_window/(?P<miner>[0-9]+|4[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+)$#", $request->getUri()->getPath(), $matches) > 0){
         $miner = (strlen($matches["miner"]) > 10 and $matches["miner"][0] === "4") ? $api->getDatabase()->getMinerByAddress($matches["miner"]) : null;
-        if($miner === null){
+        if($miner === null and preg_match("#^[0-9]+$#", $matches["miner"]) > 0){
             $miner = $api->getDatabase()->getMiner((int) $matches["miner"]);
         }
         if($miner === null){
@@ -213,6 +259,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
             $r = [
                 "id" => $block->getId(),
                 "height" => $block->getHeight(),
+                "timestamp" => $block->getTimestamp(),
                 "weight" => gmp_intval($weight = gmp_init($block->getDifficulty(), 16)),
                 "uncles" => []
             ];
@@ -243,6 +290,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
                 ],
                 "id" => $uncle->getId(),
                 "height" => $uncle->getHeight(),
+                "timestamp" => $block->getTimestamp(),
                 "weight" => gmp_intval(gmp_div(gmp_mul(gmp_init($uncle->getDifficulty(), 16), 100 - SIDECHAIN_UNCLE_PENALTY), 100))
             ];
         }
@@ -254,7 +302,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
 
     if(preg_match("#^/api/payouts/(?P<miner>[0-9]+|4[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+)$#", $request->getUri()->getPath(), $matches) > 0){
         $miner = (strlen($matches["miner"]) > 10 and $matches["miner"][0] === "4") ? $api->getDatabase()->getMinerByAddress($matches["miner"]) : null;
-        if($miner === null){
+        if($miner === null and preg_match("#^[0-9]+$#", $matches["miner"]) > 0){
             $miner = $api->getDatabase()->getMiner((int) $matches["miner"]);
         }
         if($miner === null){
@@ -263,10 +311,17 @@ $server = new HttpServer(function (ServerRequestInterface $request){
             ], json_encode(["error" => "not_found"]));
         }
 
-        $limit = isset($params["search_limit"]) ? (int) min(50, $params["search_limit"]) : 10;
 
+        $top_limit = iterator_to_array($api->getDatabase()->query("SELECT COUNT(*) as count FROM coinbase_outputs WHERE miner = $1;", [$miner->getId()]))[0]["count"];
+        $limit = isset($params["search_limit"]) ? (int) min($top_limit, $params["search_limit"]) : min($top_limit, 10);
+
+        //TODO: refactor this to use different query
         $returnData = [];
-        foreach ($api->getDatabase()->getAllFound($limit) as $block){
+        foreach ($api->getDatabase()->getAllFound(2000) as $block){
+            if(count($returnData) >= $limit){
+                break;
+            }
+
             $o = $api->getDatabase()->getCoinbaseTransactionOutputByMinerId($block->getCoinbaseId(), $miner->getId());
 
             if($o === null){
@@ -366,7 +421,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
         $returnData = [];
 
         foreach ($api->getDatabase()->getAllFound($limit) as $block){
-            $returnData[] = getBlockAsJSONData($api, $block, false, false);
+            $returnData[] = getBlockAsJSONData($api, $block, false, isset($params["coinbase"]));
         }
 
         return new Response(200, [

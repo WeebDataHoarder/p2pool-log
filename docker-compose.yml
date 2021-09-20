@@ -23,6 +23,27 @@ services:
       SERVICE1_TOR_SERVICE_KEY: ${TOR_SERVICE_KEY}
     networks:
       - p2pool-log
+  site:
+    image: nginx:mainline
+    restart: always
+    volumes:
+      - ./static:/web:ro
+      - ./docker/nginx/snippets/cors.conf:/etc/nginx/snippets/cors.conf:ro
+      - ./docker/nginx/snippets/csp.conf:/etc/nginx/snippets/csp.conf:ro
+      - ./docker/nginx/snippets/security-headers.conf:/etc/nginx/snippets/security-headers.conf:ro
+      - ./docker/nginx/site.conf:/etc/nginx/conf.d/site.conf:ro
+    depends_on:
+      - api
+      - web
+    tmpfs:
+      - /run
+      - /var/cache/nginx
+      - /tmp
+    networks:
+      - p2pool-log
+    ports:
+      - 8189:80
+
   api:
     build:
       context: ./
@@ -45,25 +66,24 @@ services:
       - p2pool-log
     command: >-
       php /app/src/api.php "host=db port=5432 dbname=p2pool user=p2pool password=p2pool"
-  site:
-    image: nginx:mainline
+  web:
+    build:
+      context: ./
+      dockerfile: docker/php/Dockerfile
     restart: always
-    volumes:
-      - ./static:/web:ro
-      - ./docker/nginx/snippets/cors.conf:/etc/nginx/snippets/cors.conf:ro
-      - ./docker/nginx/snippets/csp.conf:/etc/nginx/snippets/csp.conf:ro
-      - ./docker/nginx/snippets/security-headers.conf:/etc/nginx/snippets/security-headers.conf:ro
-      - ./docker/nginx/site.conf:/etc/nginx/conf.d/site.conf:ro
+    environment:
+      - MONEROD_RPC_URL=${MONEROD_RPC_URL}
     depends_on:
       - api
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
     tmpfs:
-      - /run
-      - /var/cache/nginx
       - /tmp
     networks:
       - p2pool-log
-    ports:
-      - 8189:80
+    command: >-
+      php /app/src/web.php
   scraper:
     build:
       context: ./

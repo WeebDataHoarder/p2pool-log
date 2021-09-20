@@ -1,0 +1,54 @@
+body {
+    margin: 0;
+    padding: 0;
+    color: #c1c1c1;
+    background-color: #4c4c4c;
+
+    font-family: Helvetica, Arial, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    text-align: center;
+}
+
+.content {
+    margin-top: 15px;
+    margin-bottom: 30px;
+}
+
+.small {
+    font-size: 80%;
+}
+
+.smaller {
+    font-size: 60%;
+}
+
+.center {
+    margin-left: auto;
+    margin-right: auto;
+    width: 96%;
+}
+
+.mono {
+    font-family: "Lucida Console", Monaco, monospace;
+}
+
+a, a:hover, a:visited, a:link, a:active {
+    text-decoration: underline dotted #333;
+    color: inherit;
+}
+
+form {
+    display: inline-block;
+    text-align: center;
+}
+
+h1 {
+    color: #ff6600;
+    font-weight: bold;
+}
+
+h1 a {
+    text-decoration: none !important;
+}

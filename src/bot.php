@@ -34,13 +34,40 @@ const FORMAT_RESET = "\x0F";
 const PERMISSION_NONE = 0;
 const DEFAULT_PERMISSION = PERMISSION_NONE;
 
-function sendIRCMessage($message, $to, $notice = false){
+
+$_ircMessageQueue = [];
+$_ircLastMessage = microtime(true);
+function handleIRCMessageQueue(){
+    global $_ircLastMessage, $_ircMessageQueue, $socket;
+
+    $intervalRequired = 1.0;
+
+    if(count($_ircMessageQueue) > 0 and microtime(true) >= ($_ircLastMessage + $intervalRequired)){
+        $line = array_shift($_ircMessageQueue);
+        echo "[RAWOUT ASYNC] $line\n";
+        fwrite($socket, "$line\r\n");
+        fflush($socket);
+        $_ircLastMessage = microtime(true);
+    }
+}
+
+function sendIRCMessage($message, $to, $async = false){
     global $socket;
-    $cmd = $notice ? "NOTICE" : "PRIVMSG";
+    global $_ircMessageQueue, $_ircLastMessage;
+    $cmd = "PRIVMSG";
     $message = str_replace(["\r", "\n", "\\r", "\\n"], "", $message);
-    echo "[RAWOUT] $cmd $to :$message\n";
-    fwrite($socket, "$cmd $to :$message\r\n");
-    fflush($socket);
+
+    $line = "$cmd $to :$message";
+
+    if($async){
+        echo "[RAWOUT] $line\n";
+        fwrite($socket, "$line\r\n");
+        fflush($socket);
+        $_ircLastMessage = microtime(true);
+    }else{
+        $_ircMessageQueue[] = $line;
+        handleIRCMessageQueue();
+    }
 }
 
 function removePing($s){
