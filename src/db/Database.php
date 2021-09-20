@@ -34,7 +34,7 @@ class Database{
      */
     public function getSubscriptionsFromNick(string $nick) : \Iterator{
         $result = pg_query_params($this->db, 'SELECT miner, nick FROM subscriptions WHERE nick = $1;', [$nick]);
-        while(($res = pg_fetch_assoc($result)) !== false){
+        while($result !== false and ($res = pg_fetch_assoc($result)) !== false){
             yield new Subscription($res["miner"], $res["nick"]);
         }
     }
@@ -45,7 +45,7 @@ class Database{
      */
     public function getSubscriptionsFromMiner(int $miner) : \Iterator{
         $result = pg_query_params($this->db, 'SELECT miner, nick FROM subscriptions WHERE miner = $1;', [$miner]);
-        while(($res = pg_fetch_assoc($result)) !== false){
+        while($result !== false and ($res = pg_fetch_assoc($result)) !== false){
             yield new Subscription($res["miner"], $res["nick"]);
         }
     }
@@ -79,7 +79,7 @@ class Database{
 
     public function query(string $query, array $params = []) : \Iterator{
         $result = pg_query_params($this->db, $query, $params);
-        while(($res = pg_fetch_assoc($result)) !== false){
+        while($result !== false and ($res = pg_fetch_assoc($result)) !== false){
             yield $res;
         }
     }
@@ -107,7 +107,7 @@ class Database{
     public function getBlocksByQuery(string $where, array $params = []) : \Generator {
         $result = pg_query_params($this->db, 'SELECT * FROM blocks '.$where.';', $params);
 
-        while(($res = pg_fetch_assoc($result)) !== false){
+        while($result !== false and ($res = pg_fetch_assoc($result)) !== false){
             yield new Block($res["id"], $res["height"], $res["previous_id"], $res["coinbase_id"], $res["coinbase_reward"], $res["coinbase_privkey"], $res["difficulty"], $res["timestamp"], $res["miner"], $res["pow_hash"], $res["main_height"], $res["main_id"], $res["main_found"] === "t", $res["miner_main_id"], $res["miner_main_difficulty"]);
         }
     }
@@ -120,7 +120,7 @@ class Database{
     public function getUncleBlocksByQuery(string $where, array $params = []) : \Iterator {
         $result = pg_query_params($this->db, 'SELECT * FROM uncles '.$where.';', $params);
 
-        while(($res = pg_fetch_assoc($result)) !== false){
+        while($result !== false and ($res = pg_fetch_assoc($result)) !== false){
             yield new UncleBlock($res["parent_id"], $res["parent_height"], $res["id"], $res["height"], $res["previous_id"], $res["coinbase_id"], $res["coinbase_reward"], $res["coinbase_privkey"], $res["difficulty"], $res["timestamp"], $res["miner"], $res["pow_hash"], $res["main_height"], $res["main_id"], $res["main_found"] === "t", $res["miner_main_id"], $res["miner_main_difficulty"]);
         }
     }
