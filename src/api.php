@@ -313,9 +313,29 @@ $server = new HttpServer(function (ServerRequestInterface $request){
         ]);
     }
 
+    if(preg_match("#^/api/redirect/prove/(?P<height_index>[0-9]+|.[0-9A-Za-z]+)$#", $request->getUri()->getPath(), $matches) > 0){
+        $i = Utils::decodeBinaryNumber($matches["height_index"]);
+        $n = ceil(log(SIDECHAIN_PPLNS_WINDOW, 2));
+        $height = $i >> $n;
+        $index = $i & ((1 << $n) - 1);
+
+        $b = $api->getDatabase()->getBlockByHeight($height);
+
+        if($b === null or ($tx = $api->getDatabase()->getCoinbaseTransactionOutputByIndex($b->getCoinbaseId(), $index)) === null){
+            return new Response(404, [
+                "Content-Type" => "application/json; charset=utf-8"
+            ], json_encode(["error" => "not_found"]));
+        }
+        $miner = $api->getDatabase()->getMiner($tx->getMiner());
+        return new Response(302, [
+            //TODO: make own viewer
+            "Location" => "https://www.exploremonero.com/receipt/".$b->getCoinbaseId()."/".$miner->getAddress()."/".$b->getCoinbasePrivkey()
+        ]);
+    }
+
     if(preg_match("#^/api/redirect/prove/(?P<height>[0-9]+|.[0-9A-Za-z]+)/(?P<miner>[0-9]+|.?[0-9A-Za-z]+)$#", $request->getUri()->getPath(), $matches) > 0){
-        $b = $api->getDatabase()->getBlockByHeight(Utils::decodeBinaryNumber($matches["height"]));
-        $miner = $api->getDatabase()->getMiner(Utils::decodeBinaryNumber($matches["miner"]));
+        $b = $api->getDatabase()->getBlockByHeight($matches["height"]);
+        $miner = $api->getDatabase()->getMiner($matches["miner"]);
         if($b === null or $miner === null){
             return new Response(404, [
                 "Content-Type" => "application/json; charset=utf-8"

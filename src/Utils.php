@@ -77,7 +77,7 @@ class Utils {
     static function encodeBinaryNumber(int $i): string {
         $v = gmp_strval($i, 62);
 
-        return preg_match("#^[0-9]+$#", $v) > 0 ? ".$v" : $v;
+        return strlen($v) >= strlen((string) $i) ? (string) $i : (preg_match("#^[0-9]+$#", $v) > 0 ? ".$v" : $v);
     }
 
     static function decodeBinaryNumber(string $i): int {

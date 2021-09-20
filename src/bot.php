@@ -236,17 +236,21 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                     $minerAmount = [];
                     foreach ($miners as $miner){
                         $o = $database->getCoinbaseTransactionOutputByMinerId($block->getCoinbaseId(), $miner->getId());
-                        $total += $o !== null ? $o->getAmount() : 0;
-                        $minerAmount[$miner->getId()] = $o !== null ? $o->getAmount() : 0;
+                        if($o !== null){
+                            $total += $o->getAmount();
+                            $minerAmount[$o->getIndex()] = $o->getAmount();
+                        }
                     }
 
                     if($total !== null){
                         arsort($minerAmount);
                         reset($minerAmount);
-                        $minerId = key($minerAmount);
+                        $index = key($minerAmount);
                         $total = bcdiv((string) $total, "1000000000000", 12);
 
-                        sendIRCMessage("Your last payout was ". FORMAT_COLOR_ORANGE . FORMAT_BOLD . $total . " XMR".FORMAT_RESET." on block ". FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET ." ".time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://p2pool.observer/b/".Utils::encodeBinaryNumber($block->getMainHeight())." :: Verify payout https://p2pool.observer/p/".Utils::encodeBinaryNumber($block->getHeight())."/" . Utils::encodeBinaryNumber($minerId), $answer);
+                        $i = ($block->getHeight() << (int) ceil(log(SIDECHAIN_PPLNS_WINDOW, 2))) | $index;
+
+                        sendIRCMessage("Your last payout was ". FORMAT_COLOR_ORANGE . FORMAT_BOLD . $total . " XMR".FORMAT_RESET." on block ". FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET ." ".time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://p2pool.observer/b/".Utils::encodeBinaryNumber($block->getMainHeight())." :: Verify payout https://p2pool.observer/p/".Utils::encodeBinaryNumber($i), $answer);
                         return;
                     }
                 }
