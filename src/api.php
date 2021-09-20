@@ -334,8 +334,8 @@ $server = new HttpServer(function (ServerRequestInterface $request){
     }
 
     if(preg_match("#^/api/redirect/prove/(?P<height>[0-9]+|.[0-9A-Za-z]+)/(?P<miner>[0-9]+|.?[0-9A-Za-z]+)$#", $request->getUri()->getPath(), $matches) > 0){
-        $b = $api->getDatabase()->getBlockByHeight($matches["height"]);
-        $miner = $api->getDatabase()->getMiner($matches["miner"]);
+        $b = $api->getDatabase()->getBlockByHeight(Utils::decodeBinaryNumber($matches["height"]));
+        $miner = $api->getDatabase()->getMiner(Utils::decodeBinaryNumber($matches["miner"]));
         if($b === null or $miner === null){
             return new Response(404, [
                 "Content-Type" => "application/json; charset=utf-8"
