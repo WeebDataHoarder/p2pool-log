@@ -124,7 +124,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 $miner = $database->getOrCreateMinerByAddress($maddress->getAddress());
                 $sub = new Subscription($miner->getId(), $originalSender["user"]);
                 $database->addSubscription($sub);
-                sendIRCMessage("Subscribed your nick to shares found by " . FORMAT_ITALIC . shortenAddress($maddress->getAddress()), $answer);
+                sendIRCMessage("Subscribed your nick to shares found by " . FORMAT_ITALIC . shortenAddress($maddress->getAddress()) . ". You can private message this bot for any commands instead of using public channels.", $answer);
 
                 $payouts = $api->getWindowPayouts();
 
