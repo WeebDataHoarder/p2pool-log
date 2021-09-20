@@ -248,7 +248,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                         $index = key($minerAmount);
                         $total = bcdiv((string) $total, "1000000000000", 12);
 
-                        $i = ($block->getHeight() << (int) ceil(log(SIDECHAIN_PPLNS_WINDOW, 2))) | $index;
+                        $i = ($block->getHeight() << (int) ceil(log(SIDECHAIN_PPLNS_WINDOW * (P2POOL_UNCLE_BLOCK_DEPTH + 1), 2))) | $index;
 
                         sendIRCMessage("Your last payout was ". FORMAT_COLOR_ORANGE . FORMAT_BOLD . $total . " XMR".FORMAT_RESET." on block ". FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET ." ".time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://p2pool.observer/b/".Utils::encodeBinaryNumber($block->getMainHeight())." :: Verify payout https://p2pool.observer/p/".Utils::encodeBinaryNumber($i), $answer);
                         return;

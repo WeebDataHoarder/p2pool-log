@@ -315,7 +315,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
 
     if(preg_match("#^/api/redirect/prove/(?P<height_index>[0-9]+|.[0-9A-Za-z]+)$#", $request->getUri()->getPath(), $matches) > 0){
         $i = Utils::decodeBinaryNumber($matches["height_index"]);
-        $n = ceil(log(SIDECHAIN_PPLNS_WINDOW, 2));
+        $n = ceil(log(SIDECHAIN_PPLNS_WINDOW * (P2POOL_UNCLE_BLOCK_DEPTH + 1), 2));
         $height = $i >> $n;
         $index = $i & ((1 << $n) - 1);
 

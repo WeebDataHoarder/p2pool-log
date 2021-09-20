@@ -2,6 +2,8 @@
 
 namespace p2pool;
 
+const P2POOL_UNCLE_BLOCK_DEPTH = 3;
+
 const SIDECHAIN_PPLNS_WINDOW = 2160;
 const MAINCHAIN_BLOCK_TIME = 60 * 2;
 const SIDECHAIN_BLOCK_TIME = 10;
