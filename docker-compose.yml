@@ -44,7 +44,7 @@ services:
     networks:
       - p2pool-log
     command: >-
-      php /app/src/index.php "host=db port=5432 dbname=p2pool user=p2pool password=p2pool"
+      php /app/src/api.php "host=db port=5432 dbname=p2pool user=p2pool password=p2pool"
   site:
     image: nginx:mainline
     restart: always

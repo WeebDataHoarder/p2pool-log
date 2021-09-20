@@ -73,4 +73,17 @@ class Utils {
 
         return @json_decode(curl_exec($ch));
     }
+
+    static function encodeBinaryNumber(int $i): string {
+        $v = gmp_strval($i, 62);
+
+        return preg_match("#^[0-9]+$#", $v) > 0 ? ".$v" : $v;
+    }
+
+    static function decodeBinaryNumber(string $i): int {
+        if(preg_match("#^[0-9]+$#", $i) > 0){
+            return (int) $i;
+        }
+        return gmp_intval(gmp_init(str_replace(".", "", $i), 62));
+    }
 }
