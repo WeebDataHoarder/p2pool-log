@@ -452,29 +452,33 @@ $checks = [
                 $xvb_raffle = null;
             }
 
-            $ch = curl_init("https://xmrvsbeast.com/p2pool/");
+            $ch = curl_init("https://xmrvsbeast.com/p2pool/stats");
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_TIMEOUT, 5);
             //curl_setopt($ch, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5_HOSTNAME);
             //curl_setopt($ch, CURLOPT_PROXY, "tor:9050");
-            $ret = curl_exec($ch);
+            $ret = json_decode(curl_exec($ch));
 
-            $timeRemains = trim(getString($ret, '>Raffle Round Time Remaining:', '</'), "\n\t .");
-            $hashRate = trim(getString($ret, '>Bonus Hash Rate:', '</'), "\n\t .");
-            $addr = trim(getString($ret, '<code>4', '</'), "\n\t .");
-            $addr = explode("...", "4" . $addr);
+            if(isset($ret->winner)){
+                $timeRemains = (int) $ret->time_remain;
+                $players = (int) $ret->players;
+                $hashRate = $ret->bonus_hr * 1000;
+                $addr = explode("...", $ret->winner);
 
-            if(count($addr) === 2 and preg_match('/^[0-9.]+[km]h\\/s$/i', $hashRate) > 0 and preg_match('/^[a-z 0-9,]+$/i', $timeRemains) > 0){
-                $miner = $database->getMinerByAddressBounds($addr[0], $addr[1]);
+                if(count($addr) === 2){
+                    $miner = $database->getMinerByAddressBounds($addr[0], $addr[1]);
 
-                if($miner !== null and ($xvb_raffle === null or $xvb_raffle !== $miner->getId())){
-                    $xvb_raffle = $miner->getId();
+                    if($miner !== null and ($xvb_raffle === null or $xvb_raffle !== $miner->getId())){
+                        $xvb_raffle = $miner->getId();
 
-                    foreach ($database->getSubscriptionsFromMiner($miner->getId()) as $sub){
-                        sendIRCMessage("You have been selected for XvB P2Pool Bonus Hash Rate Raffle :: Remaining $timeRemains :: Bonus $hashRate :: https://xmrvsbeast.com/p2pool/ :: Payout address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
+                        foreach ($database->getSubscriptionsFromMiner($miner->getId()) as $sub){
+                            sendIRCMessage("You have been selected for XvB P2Pool Bonus Hash Rate Raffle :: Remaining $timeRemains minutes :: Bonus ".si_units($hashRate, 2)."H/s :: Currently $players players :: https://xmrvsbeast.com/p2pool/ :: Payout address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
+                        }
                     }
                 }
             }
+
+
         }
     ]
 ];
