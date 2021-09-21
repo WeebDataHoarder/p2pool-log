@@ -139,11 +139,12 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 $database->addSubscription($sub);
                 sendIRCMessage("Subscribed your nick to shares found by " . FORMAT_ITALIC . shortenAddress($maddress->getAddress()) . ". You can private message this bot for any commands instead of using public channels.", $answer);
 
+                sendIRCMessage("Your miner statistics https://p2pool.observer/m/" . Utils::encodeBinaryNumber($miner->getId()), $answer, true);
                 $payouts = $api->getWindowPayouts();
 
                 $myReward = (($payouts[$miner->getId()] ?? 0) / array_sum($payouts));
                 if($myReward > NOTIFICATION_POOL_SHARE){
-                    sendIRCMessage("You have more than ".round(NOTIFICATION_POOL_SHARE * 100, 2)."% of the pool's current hashrate. Share notifications will not be sent above this threshold.", $answer);
+                    sendIRCMessage("You have more than ".round(NOTIFICATION_POOL_SHARE * 100, 2)."% of the pool's current hashrate. Share notifications will not be sent above this threshold.", $answer, true);
                 }
 
             },
@@ -288,6 +289,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 foreach ($subs as $sub){
                     $result = getShareWindowPosition($sub->getMiner());
                     $myReward += $payouts[$sub->getMiner()] ?? 0;
+                    $miners[$sub->getMiner()] = $payouts[$sub->getMiner()] ?? 0;
                     if($total === null){
                         $total = $result;
                     }else{
@@ -316,8 +318,12 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 $myHashrate = gmp_strval($hashrate) * $myReward;
                 $myReward = (string) round($myReward * 100, 3);
 
+                rsort($miners);
 
-                $m = "Your shares $share_count (+$uncle_count uncles) ~$myReward% " . Utils::si_units($myHashrate) . "H/s";
+                reset($miners);
+                $minerId = key($miners);
+
+                $m = "Your shares $share_count (+$uncle_count uncles) ~$myReward% " . Utils::si_units($myHashrate) . "H/s :: Statistics https://p2pool.observer/m/" . Utils::encodeBinaryNumber($minerId);
 
                 if($share_count > 0){
                     $m .= " :: Shares position [";
@@ -363,13 +369,13 @@ function blockFoundMessage(Block $b){
     global $api;
     $payouts = $api->getWindowPayouts();
 
-    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "BLOCK FOUND:" . FORMAT_RESET . " height " . FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " :: Pool height ". $b->getHeight() ." :: https://p2pool.observer/b/" . Utils::encodeBinaryNumber($b->getMainHeight()) . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners paid" . FORMAT_RESET . " :: Id " . FORMAT_ITALIC . $b->getMainId(), BOT_BLOCKS_FOUND_CHANNEL);
-    sendIRCMessage("Paid ".FORMAT_COLOR_ORANGE . FORMAT_BOLD . bcdiv((string) $b->getCoinbaseReward(), "1000000000000", 12) . " XMR".FORMAT_RESET." :: Verify payouts using Tx private key " . FORMAT_ITALIC . $b->getCoinbasePrivkey() . FORMAT_RESET . " :: Payout transaction for block ". FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " https://p2pool.observer/c/".Utils::encodeBinaryNumber($b->getHeight())."", BOT_BLOCKS_FOUND_CHANNEL);
+    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "BLOCK FOUND:" . FORMAT_RESET . " height " . FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " :: Pool height ". $b->getHeight() ." :: https://p2pool.observer/b/" . Utils::encodeBinaryNumber($b->getMainHeight()) . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners paid" . FORMAT_RESET . " :: Id " . FORMAT_ITALIC . $b->getMainId(), BOT_BLOCKS_FOUND_CHANNEL, true);
+    sendIRCMessage("Paid ".FORMAT_COLOR_ORANGE . FORMAT_BOLD . bcdiv((string) $b->getCoinbaseReward(), "1000000000000", 12) . " XMR".FORMAT_RESET." :: Verify payouts using Tx private key " . FORMAT_ITALIC . $b->getCoinbasePrivkey() . FORMAT_RESET . " :: Payout transaction for block ". FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " https://p2pool.observer/c/".Utils::encodeBinaryNumber($b->getHeight())."", BOT_BLOCKS_FOUND_CHANNEL, true);
     sleep(1);
 }
 
 function blockUnfoundMessage(Block $b){
-    sendIRCMessage(FORMAT_COLOR_RED . FORMAT_BOLD . "BLOCK ORPHANED:" . FORMAT_RESET . " height " . FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " :: Pool height ". $b->getHeight() ." :: Pool Id " . FORMAT_ITALIC . $b->getId() . FORMAT_RESET . " :: Id " . FORMAT_ITALIC . $b->getMainId(), BOT_BLOCKS_FOUND_CHANNEL);
+    sendIRCMessage(FORMAT_COLOR_RED . FORMAT_BOLD . "BLOCK ORPHANED:" . FORMAT_RESET . " height " . FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " :: Pool height ". $b->getHeight() ." :: Pool Id " . FORMAT_ITALIC . $b->getId() . FORMAT_RESET . " :: Id " . FORMAT_ITALIC . $b->getMainId(), BOT_BLOCKS_FOUND_CHANNEL, true);
 }
 
 function getShareWindowPosition(int $miner, int $count = 30): array {
@@ -406,7 +412,7 @@ function shareFoundMessage(Block $b, Subscription $sub, Miner $miner, array $unc
 
     $share_count = array_sum($positions[0]);
     $uncle_count = array_sum($positions[1]);
-    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "SHARE FOUND:" . FORMAT_RESET . " Pool height " . FORMAT_COLOR_RED . $b->getHeight() . FORMAT_RESET . " ".(count($uncles) > 0 ? ":: Includes " . count($uncles) . " uncle(s) for extra ".SIDECHAIN_UNCLE_PENALTY."% of their value " : "").($b->isMainFound() ? ":: ".FORMAT_BOLD. FORMAT_COLOR_LIGHT_GREEN ." MINED MAINCHAN BLOCK " . $b->getMainHeight() . FORMAT_RESET . " " : "").":: Your shares $share_count (+$uncle_count uncles) ~$myReward% :: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
+    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "SHARE FOUND:" . FORMAT_RESET . " Pool height " . FORMAT_COLOR_RED . $b->getHeight() . FORMAT_RESET . " ".(count($uncles) > 0 ? ":: Includes " . count($uncles) . " uncle(s) for extra ".SIDECHAIN_UNCLE_PENALTY."% of their value " : "").($b->isMainFound() ? ":: ".FORMAT_BOLD. FORMAT_COLOR_LIGHT_GREEN ." MINED MAINCHAN BLOCK " . $b->getMainHeight() . FORMAT_RESET . " " : "").":: Your shares $share_count (+$uncle_count uncles) ~$myReward% :: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick(), true);
 }
 
 function uncleFoundMessage(UncleBlock $b, Subscription $sub, Miner $miner){
@@ -422,7 +428,7 @@ function uncleFoundMessage(UncleBlock $b, Subscription $sub, Miner $miner){
 
     $share_count = array_sum($positions[0]);
     $uncle_count = array_sum($positions[1]);
-    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "UNCLE SHARE FOUND:" . FORMAT_RESET . " Pool height " . FORMAT_COLOR_RED . $b->getParentHeight() . FORMAT_RESET . " ".($b->isMainFound() ? ":: ".FORMAT_BOLD. FORMAT_COLOR_LIGHT_GREEN ." MINED MAINCHAN BLOCK " . $b->getMainHeight() . FORMAT_RESET . " " : "").":: Accounted for ".(100 - SIDECHAIN_UNCLE_PENALTY)."% of value :: Your shares $share_count (+$uncle_count uncles) ~$myReward% :: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
+    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "UNCLE SHARE FOUND:" . FORMAT_RESET . " Pool height " . FORMAT_COLOR_RED . $b->getParentHeight() . FORMAT_RESET . " ".($b->isMainFound() ? ":: ".FORMAT_BOLD. FORMAT_COLOR_LIGHT_GREEN ." MINED MAINCHAN BLOCK " . $b->getMainHeight() . FORMAT_RESET . " " : "").":: Accounted for ".(100 - SIDECHAIN_UNCLE_PENALTY)."% of value :: Your shares $share_count (+$uncle_count uncles) ~$myReward% :: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick(), true);
 }
 
 function getString($str, $start, $end){
@@ -460,7 +466,7 @@ $checks = [
                         $xvb_raffle = $miner->getId();
 
                         foreach ($database->getSubscriptionsFromMiner($miner->getId()) as $sub){
-                            sendIRCMessage("You have been selected for XvB P2Pool Bonus Hash Rate Raffle :: Remaining $timeRemains minutes :: Bonus ".Utils::si_units($hashRate, 2)."H/s :: Currently $players players :: https://xmrvsbeast.com/p2pool/ :: Payout address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
+                            sendIRCMessage("You have been selected for XvB P2Pool Bonus Hash Rate Raffle :: Remaining $timeRemains minutes :: Bonus ".Utils::si_units($hashRate, 2)."H/s :: Currently $players players :: https://xmrvsbeast.com/p2pool/ :: Payout address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick(), true);
                         }
                     }
                 }
