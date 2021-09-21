@@ -127,7 +127,7 @@
         <tr>
             <th>{{ s.height }}</th>
             <td class="mono smaller">{{ s.id|slice(0, 10) ~ "..." ~ s.id|slice(-10) }}</td>
-            <td title="{{ s.main.id }}"><a href="/b/{{ s.main.height|benc }}">{{ s.main.height }}</a></td>
+            <td title="{{ s.main.id }}">{{ s.main.height }}</td>
             <td title="{{ s.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ s.timestamp)|time_elapsed_string(false) }}</td>
             <td title="{{ s.miner }}" class="mono small"><a href="/miner?address={{ s.miner }}">{{ s.miner|slice(0, 10) ~ "..." ~ s.miner|slice(-10) }}</a></td>
             <td>
