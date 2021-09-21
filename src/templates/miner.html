@@ -114,11 +114,11 @@
             <td title="{{ s.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ s.timestamp)|time_elapsed_string(false) }}</td>
             <td>
                 {% if s.parent %}
-                  {{ 100 - pool.uncle_penalty }}% (uncle)
+                  {{ 100 - pool.sidechain.uncle_penalty }}% (uncle)
                 {% else %}
                     100%
                     {% if s.uncles %}
-                        + {{ pool.uncle_penalty }}% of {{ s.uncles|length }} uncle(s)
+                        + {{ pool.sidechain.uncle_penalty }}% of {{ s.uncles|length }} uncle(s)
                     {% endif %}
                 {% endif %}
             </td>
