@@ -577,15 +577,15 @@ function handleCheck(){
             if($uncle->isMainFound()){
                 $blockExists = false;
                 foreach ($foundBlocks as $block){
-                    if($block->getMainId() === $b->getMainId()){
+                    if($block->getMainId() === $uncle->getMainId()){
                         $blockExists = true;
                         break;
                     }
                 }
 
                 if(!$blockExists){
-                    blockFoundMessage($b);
-                    array_unshift($foundBlocks, $b);
+                    blockFoundMessage($uncle);
+                    array_unshift($foundBlocks, $uncle);
                     if(count($foundBlocks) > 6){
                         array_pop($foundBlocks);
                     }
