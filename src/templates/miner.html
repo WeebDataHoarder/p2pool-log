@@ -100,11 +100,12 @@
 
 <div style="text-align: center">
     <h2>Most recent shares</h2>
-    <table class="center" style="table-layout: fixed; width: calc(8em + 12em + 8em + 12em)">
+    <table class="center" style="table-layout: fixed; width: calc(8em + 12em + 8em + 8em + 12em)">
         <tr>
             <th style="width: 8em;">P2Pool Height</th>
             <th style="width: 12em;">P2Pool Id</th>
             <th style="width: 8em;">Time</th>
+            <th style="width: 8em;" title="Weight is the difficulty of mined share, with any uncle adjustments. It is variable, and is used in reward calculations">Weight</th>
             <th style="width: 12em;">Valuation</th>
         </tr>
         {% for s in last_shares %}
@@ -112,6 +113,7 @@
             <th>{{ s.height }}</th>
             <td class="mono smaller">{{ s.id|slice(0, 10) ~ "..." ~ s.id|slice(-10) }}</td>
             <td title="{{ s.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ s.timestamp)|time_elapsed_string(false) }}</td>
+            <td>{{ s.weight|si_units(1) }}</td>
             <td>
                 {% if s.parent %}
                   {{ 100 - pool.sidechain.uncle_penalty }}% (uncle)
