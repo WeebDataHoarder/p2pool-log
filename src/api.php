@@ -108,15 +108,18 @@ $server = new HttpServer(function (ServerRequestInterface $request){
         $block_count = 0;
         $uncle_count = 0;
         $miners = [];
+        $window_difficulty = gmp_init(0);
         foreach ($api->getDatabase()->getBlocksInWindow($tip->getHeight()) as $b){
             $block_count++;
             @$miners[$b->getMiner()]++;
+            $window_difficulty = gmp_add($window_difficulty, gmp_init($b->getDifficulty(), 16));
             foreach ($api->getDatabase()->getUnclesByParentId($b->getId()) as $u){
                 if($tip->getHeight() - $u->getHeight() > SIDECHAIN_PPLNS_WINDOW){ //TODO: check this check is correct :)
                     continue;
                 }
                 ++$uncle_count;
                 @$miners[$u->getMiner()]++;
+                $window_difficulty = gmp_add($window_difficulty, gmp_init($u->getDifficulty(), 16));
             }
         }
 
@@ -130,12 +133,17 @@ $server = new HttpServer(function (ServerRequestInterface $request){
                     "miners" => count($miners),
                     "blocks" => $block_count,
                     "uncles" => $uncle_count,
-                ]
+                    "weight" => str_pad(gmp_strval($window_difficulty, 16), strlen($tip->getDifficulty()), "0", STR_PAD_LEFT)
+                ],
+                "window_size" => SIDECHAIN_PPLNS_WINDOW,
+                "block_time" => SIDECHAIN_BLOCK_TIME,
+                "uncle_penalty" => SIDECHAIN_UNCLE_PENALTY
             ],
             "mainchain" => [
                 "id" => $tip->getMinerMainId(),
                 "height" => $tip->getMainHeight() - 1,
-                "difficulty" => $tip->getMinerMainDifficulty()
+                "difficulty" => $tip->getMinerMainDifficulty(),
+                "block_time" => MAINCHAIN_BLOCK_TIME
             ]
         ];
 
@@ -212,6 +220,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
                     "height" => $u->getHeight(),
                     "weight" => gmp_intval($uncle_weight)
                 ];
+                $r["weight"] = gmp_intval($weight);
             }
 
             if(count($r["uncles"]) === 0){
@@ -272,6 +281,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
                     "height" => $u->getHeight(),
                     "weight" => gmp_intval($uncle_weight)
                 ];
+                $r["weight"] = gmp_intval($weight);
             }
 
             if(count($r["uncles"]) === 0){

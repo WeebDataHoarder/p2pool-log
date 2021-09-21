@@ -29,36 +29,13 @@ $twig = new Environment($loader, $options);
 class TwigExtraFunctions extends AbstractExtension{
     public function getFilters() {
         return [
+            new TwigFilter('gmp_init', "gmp_init"),
+            new TwigFilter('gmp_intval', "gmp_intval"),
+            new TwigFilter('gmp_div', "gmp_div"),
             new TwigFilter('bcdiv', "bcdiv"),
             new TwigFilter('benc', [Utils::class, "encodeBinaryNumber"]),
-            new TwigFilter('time_elapsed_string', function ($datetime, $full = false) {
-                    $now = new \DateTime;
-                    $ago = new \DateTime($datetime);
-                    $diff = $now->diff($ago);
-
-                    $diff->w = floor($diff->d / 7);
-                    $diff->d -= $diff->w * 7;
-
-                    $string = array(
-                        'y' => 'y',
-                        'm' => 'M',
-                        'w' => 'w',
-                        'd' => 'd',
-                        'h' => 'h',
-                        'i' => 'm',
-                        's' => 's',
-                    );
-                    foreach ($string as $k => &$v) {
-                        if ($diff->$k) {
-                            $v = $diff->$k . $v;
-                        } else {
-                            unset($string[$k]);
-                        }
-                    }
-
-                    if (!$full) $string = array_slice($string, 0, 1);
-                    return $string ? implode(' ', $string) . ' ago' : 'just now';
-                })
+            new TwigFilter('time_elapsed_string', [Utils::class, "time_elapsed_string"]),
+            new TwigFilter('si_units', [Utils::class, "si_units"]),
         ];
     }
 }
@@ -141,6 +118,8 @@ $server = new HttpServer(function (ServerRequestInterface $request){
 
                                 $shares_in_window = 0;
                                 $uncles_in_window = 0;
+                                $long_diff = gmp_init(0);
+                                $window_diff = gmp_init(0);
 
                                 $tip = $pool_info->sidechain->height;
                                 $wend = $tip - SIDECHAIN_PPLNS_WINDOW;
@@ -151,13 +130,16 @@ $server = new HttpServer(function (ServerRequestInterface $request){
                                         $uncles_found[min($index, $count - 1)]++;
                                         if($s->height > $wend){
                                             $uncles_in_window++;
+                                            $long_diff = gmp_add($long_diff, $s->weight);
                                         }
                                     }else{
                                         $index = intdiv($tip - $s->height, intdiv($wsize + $count - 1, $count));
                                         $blocks_found[min($index, $count - 1)]++;
                                         if($s->height > $wend){
                                             $shares_in_window++;
+                                            $window_diff = gmp_add($window_diff, $s->weight);
                                         }
+                                        $long_diff = gmp_add($long_diff, $s->weight);
                                     }
                                 }
 
@@ -188,18 +170,25 @@ $server = new HttpServer(function (ServerRequestInterface $request){
 
                                 $resolve(render("miner.html", [
                                     "refresh" => isset($headers["refresh"]) ? (int) $headers["refresh"] : false,
+                                    "pool" => $pool_info,
                                     "miner" => $miner,
                                     "last_shares" => $top,
                                     "last_payouts" => $payouts,
+                                    "window_weight" => gmp_intval($window_diff),
+                                    "weight" => gmp_intval($long_diff),
                                     "window_count" => [
                                       "blocks" => $shares_in_window,
                                       "uncles" => $uncles_in_window,
+                                    ],
+                                    "count" => [
+                                        "blocks" => array_sum($blocks_found),
+                                        "uncles" => array_sum($uncles_found),
                                     ],
                                     "position" => [
                                         "blocks" => $shares_position,
                                         "uncles" => $uncles_position,
                                     ],
-                                    "uncle_penalty" => SIDECHAIN_UNCLE_PENALTY
+                                    "uncle_penalty" => SIDECHAIN_UNCLE_PENALTY,
                                 ], 200, $headers));
                             });
                         });

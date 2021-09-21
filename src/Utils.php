@@ -86,4 +86,47 @@ class Utils {
         }
         return gmp_intval(gmp_init(str_replace(".", "", $i), 62));
     }
+
+    static function si_units($number, $decimals = 3): string {
+        foreach ([
+                     "G" => 1000000000,
+                     "M" => 1000000,
+                     "K" => 1000,
+                 ] as $u => $value){
+            if($number >= $value){
+                return number_format($number / $value, $decimals) . " " . $u;
+            }
+        }
+
+        return number_format($number, $decimals);
+    }
+
+    static function time_elapsed_string($datetime, $full = false) {
+        $now = new \DateTime;
+        $ago = new \DateTime($datetime);
+        $diff = $now->diff($ago);
+
+        $diff->w = floor($diff->d / 7);
+        $diff->d -= $diff->w * 7;
+
+        $string = array(
+            'y' => 'y',
+            'm' => 'M',
+            'w' => 'w',
+            'd' => 'd',
+            'h' => 'h',
+            'i' => 'm',
+            's' => 's',
+        );
+        foreach ($string as $k => &$v) {
+            if ($diff->$k) {
+                $v = $diff->$k . $v;
+            } else {
+                unset($string[$k]);
+            }
+        }
+
+        if (!$full) $string = array_slice($string, 0, 1);
+        return $string ? implode(' ', $string) . ' ago' : 'just now';
+    }
 }

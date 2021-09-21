@@ -12,13 +12,39 @@
     {% endif %}
 </div>
 
-<h2>Miner statistics</h2>
 
-<div style="text-align: center;">
+
+<div style="text-align: center">
+    <h2>Miner statistics</h2>
     <p><strong>Payout Address:</strong> <span class="mono small">{{ miner.address }}</span></p>
-    <p><strong>Total shares:</strong> {{ miner.shares.blocks }} blocks (+{{ miner.shares.uncles }} uncles)</p>
-    <p><strong>Last share:</strong> {{ ("@" ~ miner.last_share_timestamp)|time_elapsed_string(false) }}, {{ miner.last_share_timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}</p>
-    <p><strong>Current shares:</strong> {{ window_count.blocks }} blocks (+{{ window_count.uncles }} uncles)</p>
+
+    <table class="center" style="table-layout: fixed; width: calc(15em + 15em + 15em + 15em)">
+        <tr>
+            <th>Last Share</th>
+            <th>Current Shares</th>
+            <th>Current Hashrate</th>
+            <th>Pool Share %</th>
+        </tr>
+        <tr>
+            <td title="{{ miner.last_share_timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ miner.last_share_timestamp)|time_elapsed_string(false) }}</td>
+            <td>{{ window_count.blocks }} blocks (+{{ window_count.uncles }} uncles)</td>
+            <td>{{ ((window_weight / pool.sidechain.window.weight|gmp_init(16)|gmp_intval) * (pool.sidechain.difficulty|gmp_init(16)|gmp_div(pool.sidechain.block_time)|gmp_intval))|si_units(3) }}H/s</td>
+            <td>{{ (((window_weight / pool.sidechain.window.weight|gmp_init(16)|gmp_intval))*100)|round(3) }}%</td>
+        </tr>
+        <tr><td colspan="4">&nbsp;</td></tr>
+        <tr>
+            <th>Total Shares</th>
+            <th>Day Shares</th>
+            <th>Day Hashrate</th>
+            <th>Day Share %</th>
+        </tr>
+        <tr>
+            <td>{{ miner.shares.blocks }} blocks (+{{ miner.shares.uncles }} uncles)</td>
+            <td>{{ count.blocks }} blocks (+{{ count.uncles }} uncles)</td>
+            <td>{{ ((weight / (pool.sidechain.window.weight|gmp_init(16)|gmp_intval * 4)) * (pool.sidechain.difficulty|gmp_init(16)|gmp_div(pool.sidechain.block_time)|gmp_intval))|si_units(3) }}H/s</td>
+            <td>{{ (((weight / (pool.sidechain.window.weight|gmp_init(16)|gmp_intval * 4)))*100)|round(3) }}%</td>
+        </tr>
+    </table>
 </div>
 
 
@@ -26,7 +52,13 @@
 
 <div style="text-align: center;">
     <h2>Share positions</h2>
-    <p>Shares appear on the right, and get older towards the left. The pipe (<code>|</code>) character denotes the current PPLNS window end.</p>
+    <p class="small">
+        Shares appear on the right, and get older towards the left. The pipe (<code>|</code>) character denotes the current PPLNS window end.
+        <br/>
+        Number denotes the amount of shares per slice, with the plus (<code>+</code>) character being more than 9, and dot (<code>.</code>) being none.
+        <br/>
+        Each slice accounts for {{ pool.sidechain.window_size / 30 }} P2Pool blocks, or around {{ ((pool.sidechain.window_size / 30) * pool.sidechain.block_time) / 60 }} minutes.
+    </p>
     <h3>Shares in last day</h3>
     <code class="mono">{{ position.blocks }}</code>
 

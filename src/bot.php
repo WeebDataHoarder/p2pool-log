@@ -97,20 +97,6 @@ function handleNewCTCP($sender, $senderCloak, $to, $message){
     }
 }
 
-function si_units($number, $decimals = 3): string {
-    foreach ([
-        "G" => 1000000000,
-        "M" => 1000000,
-        "K" => 1000,
-        ] as $u => $value){
-        if($number >= $value){
-            return number_format($number / $value, $decimals) . " " . $u;
-        }
-    }
-
-    return number_format($number, $decimals);
-}
-
 
 function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = false) {
     global $database;
@@ -230,7 +216,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
 
                 $effort .= round($current_effort, 2) . "%" . FORMAT_RESET;
 
-                sendIRCMessage("Last block found at height " . FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET . " ".time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://p2pool.observer/b/" . Utils::encodeBinaryNumber($block->getMainHeight()) . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners" . FORMAT_RESET . " paid for ".FORMAT_COLOR_ORANGE . FORMAT_BOLD . bcdiv((string) $block->getCoinbaseReward(), "1000000000000", 12) . " XMR".FORMAT_RESET." :: Current effort $effort :: Pool height ". $tip->getHeight() ." :: Pool hashrate ".si_units(gmp_intval($hashrate))."H/s (short-term ".si_units(gmp_intval($short_hashrate), 1)."H/s) :: Global hashrate ".si_units(gmp_intval($global_hashrate))."H/s", $answer);
+                sendIRCMessage("Last block found at height " . FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET . " ".Utils::time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://p2pool.observer/b/" . Utils::encodeBinaryNumber($block->getMainHeight()) . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners" . FORMAT_RESET . " paid for ".FORMAT_COLOR_ORANGE . FORMAT_BOLD . bcdiv((string) $block->getCoinbaseReward(), "1000000000000", 12) . " XMR".FORMAT_RESET." :: Current effort $effort :: Pool height ". $tip->getHeight() ." :: Pool hashrate ".Utils::si_units(gmp_intval($hashrate))."H/s (short-term ".Utils::si_units(gmp_intval($short_hashrate), 1)."H/s) :: Global hashrate ".Utils::si_units(gmp_intval($global_hashrate))."H/s", $answer);
             },
         ],
         [
@@ -277,7 +263,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
 
                         $i = ($block->getHeight() << (int) ceil(log(SIDECHAIN_PPLNS_WINDOW * 4, 2))) | $index;
 
-                        sendIRCMessage("Your last payout was ". FORMAT_COLOR_ORANGE . FORMAT_BOLD . $total . " XMR".FORMAT_RESET." on block ". FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET ." ".time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://p2pool.observer/b/".Utils::encodeBinaryNumber($block->getMainHeight())." :: Verify payout https://p2pool.observer/p/".Utils::encodeBinaryNumber($i), $answer);
+                        sendIRCMessage("Your last payout was ". FORMAT_COLOR_ORANGE . FORMAT_BOLD . $total . " XMR".FORMAT_RESET." on block ". FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET ." ".Utils::time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://p2pool.observer/b/".Utils::encodeBinaryNumber($block->getMainHeight())." :: Verify payout https://p2pool.observer/p/".Utils::encodeBinaryNumber($i), $answer);
                         return;
                     }
                 }
@@ -331,7 +317,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 $myReward = (string) round($myReward * 100, 3);
 
 
-                $m = "Your shares $share_count (+$uncle_count uncles) ~$myReward% " . si_units($myHashrate) . "H/s";
+                $m = "Your shares $share_count (+$uncle_count uncles) ~$myReward% " . Utils::si_units($myHashrate) . "H/s";
 
                 if($share_count > 0){
                     $m .= " :: Shares position [";
@@ -439,35 +425,6 @@ function uncleFoundMessage(UncleBlock $b, Subscription $sub, Miner $miner){
     sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "UNCLE SHARE FOUND:" . FORMAT_RESET . " Pool height " . FORMAT_COLOR_RED . $b->getParentHeight() . FORMAT_RESET . " ".($b->isMainFound() ? ":: ".FORMAT_BOLD. FORMAT_COLOR_LIGHT_GREEN ." MINED MAINCHAN BLOCK " . $b->getMainHeight() . FORMAT_RESET . " " : "").":: Accounted for ".(100 - SIDECHAIN_UNCLE_PENALTY)."% of value :: Your shares $share_count (+$uncle_count uncles) ~$myReward% :: Payout Address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
 }
 
-function time_elapsed_string($datetime, $full = false) {
-    $now = new \DateTime;
-    $ago = new \DateTime($datetime);
-    $diff = $now->diff($ago);
-
-    $diff->w = floor($diff->d / 7);
-    $diff->d -= $diff->w * 7;
-
-    $string = array(
-        'y' => 'y',
-        'm' => 'M',
-        'w' => 'w',
-        'd' => 'd',
-        'h' => 'h',
-        'i' => 'm',
-        's' => 's',
-    );
-    foreach ($string as $k => &$v) {
-        if ($diff->$k) {
-            $v = $diff->$k . $v;
-        } else {
-            unset($string[$k]);
-        }
-    }
-
-    if (!$full) $string = array_slice($string, 0, 1);
-    return $string ? implode(' ', $string) . ' ago' : 'just now';
-}
-
 function getString($str, $start, $end){
     $str = strstr($str, $start, false);
     return substr($str, strlen($start), strpos($str, $end) - strlen($start));
@@ -503,7 +460,7 @@ $checks = [
                         $xvb_raffle = $miner->getId();
 
                         foreach ($database->getSubscriptionsFromMiner($miner->getId()) as $sub){
-                            sendIRCMessage("You have been selected for XvB P2Pool Bonus Hash Rate Raffle :: Remaining $timeRemains minutes :: Bonus ".si_units($hashRate, 2)."H/s :: Currently $players players :: https://xmrvsbeast.com/p2pool/ :: Payout address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
+                            sendIRCMessage("You have been selected for XvB P2Pool Bonus Hash Rate Raffle :: Remaining $timeRemains minutes :: Bonus ".Utils::si_units($hashRate, 2)."H/s :: Currently $players players :: https://xmrvsbeast.com/p2pool/ :: Payout address " . FORMAT_ITALIC . shortenAddress($miner->getAddress()), $sub->getNick());
                         }
                     }
                 }
