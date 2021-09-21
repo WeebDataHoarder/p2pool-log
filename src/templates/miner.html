@@ -112,15 +112,16 @@
             <th>{{ s.height }}</th>
             <td class="mono smaller">{{ s.id|slice(0, 10) ~ "..." ~ s.id|slice(-10) }}</td>
             <td title="{{ s.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ s.timestamp)|time_elapsed_string(false) }}</td>
-            <td title="{{ p.coinbase.id }}">
+            <td>
                 {% if s.parent %}
-                  {{ 100 - uncle_penalty }}% (uncle)
+                  {{ 100 - pool.uncle_penalty }}% (uncle)
                 {% else %}
                     100%
                     {% if s.uncles %}
-                        + {{ uncle_penalty }}% of {{ s.uncles|length }} uncle(s)
+                        + {{ pool.uncle_penalty }}% of {{ s.uncles|length }} uncle(s)
                     {% endif %}
-                {% endif %}</td>
+                {% endif %}
+            </td>
         </tr>
         {% endfor %}
     </table>

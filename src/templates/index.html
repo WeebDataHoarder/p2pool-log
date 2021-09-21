@@ -42,6 +42,19 @@
 </div>
 
 <div style="text-align: center">
+    <form action="/miner" method="get">
+        <h2>Lookup miner statistics</h2>
+        <div>
+            <label for="miner-address">Payout Monero address</label><br/>
+            <input type="text" name="address" id="miner-address" placeholder="4AeEwC2Uik2Zv4uooAUWjQb2ZvcLDBmLXN4rzSn3wjBoY8EKfNkSUqeg5PxcnWTwB1b2V39PDwU9gaNE5SnxSQPYQyoQtr7" size="96" class="mono"/>
+        </div>
+        <div style="margin-top: 10px">
+            <input type="submit" value="Lookup" style="width: 20em;"/>
+        </div>
+    </form>
+</div>
+
+<div style="text-align: center">
     <h2>Recent Monero blocks found by P2Pool miners</h2>
     <table class="center" style="table-layout: fixed; width: calc(8em + 8em + 8em + 12em + 10em + 7em + 12em + 28em)">
         <tr>
@@ -60,7 +73,7 @@
             <th title="{{ b.id }}">{{ b.height }}</th>
             <td title="{{ b.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ b.timestamp)|time_elapsed_string(false) }}</td>
             <td title="{{ b.miner }}" class="mono small"><a href="/miner?address={{ b.miner }}">{{ b.miner|slice(0, 10) ~ "..." ~ b.miner|slice(-10) }}</a></td>
-            <td class="small">{{ b.coinbase.reward|bcdiv("1000000000000", 12) }} XMR</td>
+            <th class="small">{{ b.coinbase.reward|bcdiv("1000000000000", 12) }} XMR</th>
             <td>{{ b.coinbase.payouts|length }}</td>
             <td title="{{ b.coinbase.id }}" class="mono small"><a href="/c/{{ b.height|benc }}">{{ b.coinbase.id|slice(0, 10) ~ "..." ~ b.coinbase.id|slice(-10) }}</a></td>
             <td class="mono smaller">{{ b.coinbase.private_key }}</td>
@@ -69,17 +82,38 @@
     </table>
 </div>
 
+
 <div style="text-align: center">
-    <form action="/miner" method="get">
-        <h2>Lookup miner statistics</h2>
-        <div>
-            <label for="miner-address">Payout Monero address</label><br/>
-            <input type="text" name="address" id="miner-address" placeholder="4AeEwC2Uik2Zv4uooAUWjQb2ZvcLDBmLXN4rzSn3wjBoY8EKfNkSUqeg5PxcnWTwB1b2V39PDwU9gaNE5SnxSQPYQyoQtr7" size="96" class="mono"/>
-        </div>
-        <div style="margin-top: 10px">
-            <input type="submit" value="Lookup" style="width: 20em;"/>
-        </div>
-    </form>
+    <h2>Recent P2Pool shares found</h2>
+    <table class="center" style="table-layout: fixed; width: calc(8em + 12em + 8em + 8em + 12em + 12em)">
+        <tr>
+            <th style="width: 8em;">P2Pool Height</th>
+            <th style="width: 12em;">P2Pool Id</th>
+            <th style="width: 8em;">Monero Height</th>
+            <th style="width: 8em;">Time</th>
+            <th style="width: 12em;" title="The P2Pool miner who found this share">Miner</th>
+            <th style="width: 12em;">Valuation</th>
+        </tr>
+        {% for s in shares %}
+        <tr>
+            <th>{{ s.height }}</th>
+            <td class="mono smaller">{{ s.id|slice(0, 10) ~ "..." ~ s.id|slice(-10) }}</td>
+            <td title="{{ s.main.id }}"><a href="/b/{{ s.main.height|benc }}">{{ s.main.height }}</a></td>
+            <td title="{{ s.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ s.timestamp)|time_elapsed_string(false) }}</td>
+            <td title="{{ s.miner }}" class="mono small"><a href="/miner?address={{ s.miner }}">{{ s.miner|slice(0, 10) ~ "..." ~ s.miner|slice(-10) }}</a></td>
+            <td>
+                {% if s.parent %}
+                {{ 100 - pool.sidechain.uncle_penalty }}% (uncle)
+                {% else %}
+                100%
+                {% if s.uncles and s.uncles|length > 0 %}
+                + {{ pool.sidechain.uncle_penalty }}% of {{ s.uncles|length }} uncle(s)
+                {% endif %}
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
 </div>
 
 

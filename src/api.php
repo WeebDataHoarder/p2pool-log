@@ -439,6 +439,23 @@ $server = new HttpServer(function (ServerRequestInterface $request){
         ], json_encode($returnData, JSON_UNESCAPED_SLASHES | ($isKnownBrowser ? JSON_PRETTY_PRINT : 0)));
     }
 
+    if(preg_match("#^/api/shares$#", $request->getUri()->getPath(), $matches) > 0){
+        parse_str($request->getUri()->getQuery(), $params);
+
+        $limit = isset($params["limit"]) ? (int) min(SIDECHAIN_PPLNS_WINDOW, $params["limit"]) : SIDECHAIN_PPLNS_WINDOW / 4;
+        $from = isset($params["from"]) ? (int) max(0, $params["from"]) : null;
+
+        $ret = [];
+
+        foreach ($api->getDatabase()->getBlocksInWindow($from, $limit) as $b){
+            $ret[] = getBlockAsJSONData($api, $b, true, isset($params["coinbase"]));
+        }
+
+        return new Response(200, [
+            "Content-Type" => "application/json; charset=utf-8"
+        ], json_encode($ret, JSON_UNESCAPED_SLASHES | ($isKnownBrowser ? JSON_PRETTY_PRINT : 0)));
+    }
+
     if(preg_match("#^/api/block_by_(?P<by>id|height)/(?P<block>[0-9a-f]{64}|[0-9]+)(?P<kind>|/raw|/info)$#", $request->getUri()->getPath(), $matches) > 0){
         parse_str($request->getUri()->getQuery(), $params);
 

@@ -12,6 +12,7 @@ use React\Http\Browser;
 use React\Http\HttpServer;
 use React\Http\Message\Response;
 use React\Promise\Promise;
+use React\Promise\PromiseInterface;
 use React\Socket\SocketServer;
 use Twig\Environment;
 use Twig\Extension\AbstractExtension;
@@ -87,13 +88,16 @@ $server = new HttpServer(function (ServerRequestInterface $request){
 
         return new Promise(function ($resolve, $reject) use($headers) {
 
-            getFromAPI("pool_info")->then(function ($pool_info) use ($resolve, $headers){
-                getFromAPI("found_blocks?coinbase&limit=20")->then(function ($blocks) use ($resolve, $pool_info, $headers){
-                    $resolve(render("index.html", [
-                        "refresh" => isset($headers["refresh"]) ? (int) $headers["refresh"] : false,
-                        "blocks_found" => $blocks,
-                        "pool" => $pool_info
-                    ], 200, $headers));
+            getFromAPI("pool_info", 5)->then(function ($pool_info) use ($resolve, $headers){
+                getFromAPI("found_blocks?coinbase&limit=20", 5)->then(function ($blocks) use ($resolve, $pool_info, $headers){
+                    getFromAPI("shares?limit=20", 5)->then(function ($shares) use ($blocks, $resolve, $pool_info, $headers){
+                        $resolve(render("index.html", [
+                            "refresh" => isset($headers["refresh"]) ? (int) $headers["refresh"] : false,
+                            "blocks_found" => $blocks,
+                            "shares" => $shares,
+                            "pool" => $pool_info
+                        ], 200, $headers));
+                    });
                 });
             });
         });
@@ -107,7 +111,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
         return new Promise(function ($resolve, $reject) use($address, $headers){
             getFromAPI("miner_info/$address")->then(function ($miner) use ($resolve, $headers){
                 if($miner !== null and isset($miner->address)){
-                    getFromAPI("pool_info")->then(function ($pool_info) use ($resolve, $miner, $headers) {
+                    getFromAPI("pool_info", 5)->then(function ($pool_info) use ($resolve, $miner, $headers) {
 
                         $wsize = SIDECHAIN_PPLNS_WINDOW * 4;
                         getFromAPI("shares_in_range_window/" . $miner->id . "?from=".$pool_info->sidechain->height."&window=" . $wsize)->then(function ($shares) use ($wsize, $resolve, $miner, $pool_info, $headers) {
@@ -188,7 +192,6 @@ $server = new HttpServer(function (ServerRequestInterface $request){
                                         "blocks" => $shares_position,
                                         "uncles" => $uncles_position,
                                     ],
-                                    "uncle_penalty" => SIDECHAIN_UNCLE_PENALTY,
                                 ], 200, $headers));
                             });
                         });
@@ -228,8 +231,6 @@ $server = new HttpServer(function (ServerRequestInterface $request){
     ], 404);
 });
 
-
-
 $socket = new SocketServer('0.0.0.0:8444');
 $server->listen($socket);
 
@@ -237,18 +238,32 @@ Loop::get()->run();
 
 /**
  * @param string $method
- * @return \React\Promise\PromiseInterface
+ * @param int $cacheTime
+ * @return PromiseInterface
  */
-function getFromAPI(string $method){
+function getFromAPI(string $method, int $cacheTime = 0): PromiseInterface {
     global $client;
+    static $cache = [];
 
-    return $client->get("http://api:8080/api/$method")->then(function (ResponseInterface $response){
+    if($cacheTime > 0 and isset($cache[$method]) and ($cache[$method][0] + $cacheTime) >= time()){
+        $v = $cache[$method][1];
+        return new Promise(function ($resolve, $reject) use ($v){
+            $resolve($v);
+        });
+    }
+
+    return $client->get("http://api:8080/api/$method")->then(function (ResponseInterface $response) use($cacheTime, $cache, $method){
         if ($response->getStatusCode() === 200) {
             if (count($response->getHeader("content-type")) > 0 and stripos($response->getHeader("content-type")[0], "/json") !== false) {
-                return json_decode($response->getBody()->getContents());
+                $result = json_decode($response->getBody()->getContents());
             } else {
-                return $response->getBody();
+                $result = $response->getBody();
             }
+
+            if($cacheTime > 0){
+                $cache[$method] = [time(), $result];
+            }
+            return $result;
         } else {
             return null;
         }
