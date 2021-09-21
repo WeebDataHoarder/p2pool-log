@@ -318,7 +318,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 $myHashrate = gmp_strval($hashrate) * $myReward;
                 $myReward = (string) round($myReward * 100, 3);
 
-                rsort($miners);
+                arsort($miners);
 
                 reset($miners);
                 $minerId = key($miners);
