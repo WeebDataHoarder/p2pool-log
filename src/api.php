@@ -123,12 +123,39 @@ $server = new HttpServer(function (ServerRequestInterface $request){
             }
         }
 
+
+
+        $totalKnown = iterator_to_array($api->getDatabase()->query("SELECT (SELECT COUNT(*) FROM blocks WHERE main_found = 'y') + (SELECT COUNT(*) FROM uncles WHERE main_found = 'y') as found, (SELECT COUNT(DISTINCT(miner)) FROM blocks) + (SELECT COUNT(DISTINCT(miner)) FROM uncles) as miners;"))[0];
+
+
+        $poolBlocks = $api->getPoolBlocks();
+
+        $global_diff = gmp_init($tip->getMinerMainDifficulty(), 16);
+        $current_effort = gmp_intval(gmp_div(gmp_mul(gmp_sub($api->getPoolStats()->pool_statistics->totalHashes, $poolBlocks[0]->totalHashes), 100000), $global_diff)) / 1000;
+
+        if($current_effort <= 0){
+            $current_effort = 0;
+        }
+
+        $blockEfforts = [];
+        foreach ($poolBlocks as $i => $b){
+            if($i < (count($poolBlocks) - 1) and $b->totalHashes > 0){
+                $blockEfforts[$b->hash] = round((($b->totalHashes - $poolBlocks[$i + 1]->totalHashes) * 100) / $b->difficulty, 2);
+            }
+        }
+
+
         $returnData = [
             "sidechain" => [
                 "id" => $tip->getId(),
                 "height" => $tip->getHeight(),
                 "difficulty" => $tip->getDifficulty(),
                 "timestamp" => $tip->getTimestamp(),
+                "effort" => [
+                    "current" => $current_effort,
+                    "average" => round(array_sum($blockEfforts) / count($blockEfforts), 2),
+                    "last" => $blockEfforts
+                ],
                 "window" => [
                     "miners" => count($miners),
                     "blocks" => $block_count,
@@ -137,7 +164,9 @@ $server = new HttpServer(function (ServerRequestInterface $request){
                 ],
                 "window_size" => SIDECHAIN_PPLNS_WINDOW,
                 "block_time" => SIDECHAIN_BLOCK_TIME,
-                "uncle_penalty" => SIDECHAIN_UNCLE_PENALTY
+                "uncle_penalty" => SIDECHAIN_UNCLE_PENALTY,
+                "found" => $totalKnown["found"],
+                "miners" => $totalKnown["miners"],
             ],
             "mainchain" => [
                 "id" => $tip->getMinerMainId(),

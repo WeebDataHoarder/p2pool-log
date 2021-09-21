@@ -211,7 +211,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                     $effort .= FORMAT_COLOR_LIGHT_GREEN;
                 }else if($current_effort < 200){
                     $effort .= FORMAT_COLOR_YELLOW;
-                }else if($current_effort < 300){
+                }else{
                     $effort .= FORMAT_COLOR_RED;
                 }
 

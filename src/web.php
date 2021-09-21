@@ -37,6 +37,15 @@ class TwigExtraFunctions extends AbstractExtension{
             new TwigFilter('benc', [Utils::class, "encodeBinaryNumber"]),
             new TwigFilter('time_elapsed_string', [Utils::class, "time_elapsed_string"]),
             new TwigFilter('si_units', [Utils::class, "si_units"]),
+            new TwigFilter('effort_color', function ($effort){
+                if($effort < 100){
+                    return "#00C000";
+                }else if($effort < 200){
+                    return "#E0E000";
+                }else{
+                    return "#FF0000";
+                }
+            })
         ];
     }
 }
