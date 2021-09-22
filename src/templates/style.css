@@ -32,6 +32,8 @@ h1, h2, h3, h4, h5, h6 {
 
 .mono {
     font-family: "Lucida Console", Monaco, monospace;
+    white-space: nowrap;
+    line-break: strict;
 }
 
 a, a:hover, a:visited, a:link, a:active {
