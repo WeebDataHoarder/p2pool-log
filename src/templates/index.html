@@ -91,7 +91,15 @@
         {% for b in blocks_found %}
         <tr>
             <th title="{{ b.main.id }}"><a href="/b/{{ b.main.height|benc }}">{{ b.main.height }}</a></th>
-            <th title="{{ b.id }}">{{ b.height }}</th>
+            {% if b.parent.height is defined %}
+                <th title="{{ b.id }} is an uncle of height {{ b.parent.height }}, {{ b.parent.id }}">
+                    {{ b.height }}*
+                </th>
+            {% else %}
+                <th title="{{ b.id }}">
+                    {{ b.height }}
+                </th>
+            {% endif %}
             <td title="{{ b.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ b.timestamp)|time_elapsed_string_short }}</td>
             {% if attribute(pool.sidechain.effort.last, b.main.id) is defined %}
                 <td style="font-weight:bolder; color: {{ attribute(pool.sidechain.effort.last, b.main.id)|effort_color }};">
