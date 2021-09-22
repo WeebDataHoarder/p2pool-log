@@ -80,7 +80,7 @@
         <tr>
             <th style="width: 8em;">Monero Height</th>
             <th style="width: 8em;">P2Pool Height</th>
-            <th style="width: 8em;">Time</th>
+            <th style="width: 8em;">Age <small>[h:m:s]</small></th>
             <th style="width: 8em;">Effort</th>
             <th style="width: 12em;" title="The P2Pool miner who found this block">Miner</th>
             <th style="width: 10em;">Reward</th>
@@ -92,7 +92,7 @@
         <tr>
             <th title="{{ b.main.id }}"><a href="/b/{{ b.main.height|benc }}">{{ b.main.height }}</a></th>
             <th title="{{ b.id }}">{{ b.height }}</th>
-            <td title="{{ b.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ b.timestamp)|time_elapsed_string(false) }}</td>
+            <td title="{{ b.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ b.timestamp)|time_elapsed_string_short }}</td>
             {% if attribute(pool.sidechain.effort.last, b.main.id) is defined %}
                 <td style="font-weight:bolder; color: {{ attribute(pool.sidechain.effort.last, b.main.id)|effort_color }};">
                     {{ attribute(pool.sidechain.effort.last, b.main.id)|round(2) }}%
@@ -119,7 +119,7 @@
             <th style="width: 8em;">P2Pool Height</th>
             <th style="width: 12em;">P2Pool Id</th>
             <th style="width: 8em;">Monero Height</th>
-            <th style="width: 8em;">Time</th>
+            <th style="width: 8em;">Age <small>[h:m:s]</small></th>
             <th style="width: 12em;" title="The P2Pool miner who found this share">Miner</th>
             <th style="width: 12em;">Valuation</th>
         </tr>
@@ -128,7 +128,7 @@
             <th>{{ s.height }}</th>
             <td class="mono smaller">{{ s.id|slice(0, 10) ~ "..." ~ s.id|slice(-10) }}</td>
             <td title="{{ s.main.id }}">{{ s.main.height }}</td>
-            <td title="{{ s.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ s.timestamp)|time_elapsed_string(false) }}</td>
+            <td title="{{ s.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ s.timestamp)|time_elapsed_string_short }}</td>
             <td title="{{ s.miner }}" class="mono small"><a href="/miner?address={{ s.miner }}">{{ s.miner|slice(0, 10) ~ "..." ~ s.miner|slice(-10) }}</a></td>
             <td>
                 {% if s.parent %}

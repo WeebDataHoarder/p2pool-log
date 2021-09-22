@@ -78,7 +78,7 @@
         <tr>
             <th style="width: 8em;">Monero Height</th>
             <th style="width: 8em;">P2Pool Height</th>
-            <th style="width: 8em;">Time</th>
+            <th style="width: 8em;">Age <small>[h:m:s]</small></th>
             <th style="width: 10em;">Reward</th>
             <th style="width: 12em;">Coinbase Transaction</th>
             <th style="width: 12em;" title="You can use this Private Key to verify payouts sent by P2Pool on each block through the Coinbase Transaction">Coinbase Tx Private Key</th>
@@ -87,7 +87,7 @@
         <tr>
             <th title="{{ p.main.id }}"><a href="/b/{{ p.main.height|benc }}">{{ p.main.height }}</a></th>
             <th title="{{ p.id }}">{{ p.height }}</th>
-            <td title="{{ p.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ p.timestamp)|time_elapsed_string(false) }}</td>
+            <td title="{{ p.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ p.timestamp)|time_elapsed_string_short }}</td>
             <td class="small">{{ p.coinbase.reward|bcdiv("1000000000000", 12) }} XMR</td>
             <td title="{{ p.coinbase.id }}" class="mono small"><a href="/c/{{ p.height|benc }}">{{ p.coinbase.id|slice(0, 10) ~ "..." ~ p.coinbase.id|slice(-10) }}</a></td>
             <td class="mono smaller" title="{{ p.coinbase.private_key }}">{{ p.coinbase.private_key|slice(0, 10) ~ "..." ~ p.coinbase.private_key|slice(-10) }} <a href="/p/{{ p.height|benc }}/{{ miner.id|benc }}" title="Prove you have a matching output for your address on this transaction">[[prove]]</a></td>
@@ -104,7 +104,7 @@
         <tr>
             <th style="width: 8em;">P2Pool Height</th>
             <th style="width: 12em;">P2Pool Id</th>
-            <th style="width: 8em;">Time</th>
+            <th style="width: 8em;">Age <small>[h:m:s]</small></th>
             <th style="width: 8em;" title="Weight is the difficulty of mined share, with any uncle adjustments. It is variable, and is used in reward calculations">Weight</th>
             <th style="width: 12em;">Valuation</th>
         </tr>
@@ -112,7 +112,7 @@
         <tr>
             <th>{{ s.height }}</th>
             <td class="mono smaller">{{ s.id|slice(0, 10) ~ "..." ~ s.id|slice(-10) }}</td>
-            <td title="{{ s.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ s.timestamp)|time_elapsed_string(false) }}</td>
+            <td title="{{ s.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ s.timestamp)|time_elapsed_string_short }}</td>
             <td>{{ s.weight|si_units(1) }}</td>
             <td>
                 {% if s.parent %}

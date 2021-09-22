@@ -36,6 +36,7 @@ class TwigExtraFunctions extends AbstractExtension{
             new TwigFilter('bcdiv', "bcdiv"),
             new TwigFilter('benc', [Utils::class, "encodeBinaryNumber"]),
             new TwigFilter('time_elapsed_string', [Utils::class, "time_elapsed_string"]),
+            new TwigFilter('time_elapsed_string_short', [Utils::class, "time_elapsed_string_short"]),
             new TwigFilter('si_units', [Utils::class, "si_units"]),
             new TwigFilter('effort_color', function ($effort){
                 if($effort < 100){

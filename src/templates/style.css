@@ -11,6 +11,10 @@ h1, h2, h3, h4, h5, h6 {
     text-align: center;
 }
 
+tr, li, code.mono {
+    font-size: 12px;
+}
+
 .content {
     margin-top: 15px;
     margin-bottom: 30px;

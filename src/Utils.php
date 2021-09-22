@@ -101,7 +101,28 @@ class Utils {
         return number_format($number, $decimals);
     }
 
-    static function time_elapsed_string($datetime, $full = false) {
+    static function time_elapsed_string_short($datetime): string {
+        $now = new \DateTime;
+        $ago = new \DateTime($datetime);
+        $diff = $now->diff($ago);
+        $s = str_pad($diff->h, 2, "0", STR_PAD_LEFT) . ":"
+            . str_pad($diff->i, 2, "0", STR_PAD_LEFT) . ":"
+            . str_pad($diff->s, 2, "0", STR_PAD_LEFT);
+
+        if($diff->d or $diff->m or $diff->y){
+            $s = $diff->d . ":" . $s;
+        }
+        if($diff->m or $diff->y){
+            $s = $diff->m . ":" . $s;
+        }
+        if($diff->y){
+            $s = $diff->y . ":" . $s;
+        }
+
+        return $s;
+    }
+
+    static function time_elapsed_string($datetime, bool $full = false): string {
         $now = new \DateTime;
         $ago = new \DateTime($datetime);
         $diff = $now->diff($ago);
