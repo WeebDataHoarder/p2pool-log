@@ -463,6 +463,10 @@ $checks = [
                     $miner = $database->getMinerByAddressBounds($addr[0], $addr[1]);
 
                     if($miner !== null and ($xvb_raffle === null or $xvb_raffle !== $miner->getId())){
+                        if($xvb_raffle === null){
+                            $xvb_raffle = $miner->getId();
+                            return;
+                        }
                         $xvb_raffle = $miner->getId();
 
                         foreach ($database->getSubscriptionsFromMiner($miner->getId()) as $sub){
