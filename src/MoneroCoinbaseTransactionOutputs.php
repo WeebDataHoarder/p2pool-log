@@ -37,6 +37,10 @@ class MoneroCoinbaseTransactionOutputs{
         return $total;
     }
 
+    public function getRawOutputs(): array {
+        return $this->outputs;
+    }
+
     public static function fromTransactionId($txId): ?MoneroCoinbaseTransactionOutputs {
         if(isset(static::$cache[$txId])){
             return static::$cache[$txId];

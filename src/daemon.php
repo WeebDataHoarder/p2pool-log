@@ -57,7 +57,7 @@ function processFoundBlockWithTransaction(Block $b, MoneroCoinbaseTransactionOut
     }
 
     $outputs = $tx->matchOutputs($miners, $b->getCoinbasePrivkey());
-    if(count($outputs) === count($miners)){
+    if(count($outputs) === count($miners) and count($outputs) === count($tx->getRawOutputs())){
         $new_outputs = [];
         foreach ($outputs as $minerId => $o){
             $new_outputs[(int) $o->index] = new CoinbaseTransactionOutput($b->getCoinbaseId(), $o->index, $o->amount, $minerId);

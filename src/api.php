@@ -61,6 +61,7 @@ function getBlockAsJSONData(P2PoolAPI $api, Block $b, $extraUncleData = false, $
                 ];
             }
         }
+        ksort($data["coinbase"]["payouts"]);
     }
 
     if($b instanceof UncleBlock){
