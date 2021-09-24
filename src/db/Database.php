@@ -275,8 +275,8 @@ class Database{
      * @return \Iterator
      */
     public function getShares(int $limit = 50, int $minerId = 0) : \Iterator {
-        $blocks = $this->getBlocksByQuery(($minerId !== 0 ? "WHERE miner = $2 " : "") . "ORDER BY height DESC, timestamp DESC LIMIT $1", [$limit, $minerId]);
-        $uncles = $this->getUncleBlocksByQuery(($minerId !== 0 ? "WHERE miner = $2 " : "") . "ORDER BY height DESC, timestamp DESC LIMIT $1", [$limit, $minerId]);
+        $blocks = $this->getBlocksByQuery(($minerId !== 0 ? "WHERE miner = $2 " : "") . "ORDER BY height DESC, timestamp DESC LIMIT $1", $minerId !== 0  ? [$limit, $minerId] : [$limit]);
+        $uncles = $this->getUncleBlocksByQuery(($minerId !== 0 ? "WHERE miner = $2 " : "") . "ORDER BY height DESC, timestamp DESC LIMIT $1", $minerId !== 0  ? [$limit, $minerId] : [$limit]);
 
         for($i = 0; $limit === null or $i < $limit; ++$i){
             /** @var Block $current */
