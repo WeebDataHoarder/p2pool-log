@@ -268,8 +268,49 @@ class Database{
         return iterator_to_array($this->getAllFound(1))[0] ?? null;
     }
 
+
     /**
-     * @return \Iterator|Block[]
+     * @param int $limit
+     * @param int|null $minerId
+     * @return \Iterator
+     */
+    public function getShares(int $limit = 50, int $minerId = null) : \Iterator {
+        $blocks = $this->getBlocksByQuery(($minerId !== null ? "WHERE miner = $2 " : "") . "ORDER BY height DESC, timestamp DESC LIMIT $1", [$limit, $minerId]);
+        $uncles = $this->getUncleBlocksByQuery(($minerId !== null ? "WHERE miner = $2 " : "") . "ORDER BY height DESC, timestamp DESC LIMIT $1", [$limit, $minerId]);
+
+        for($i = 0; $limit === null or $i < $limit; ++$i){
+            /** @var Block $current */
+            $current = null;
+
+            if($blocks->current() !== null){
+                if($current === null or $blocks->current()->getHeight() > $current->getHeight()){
+                    $current = $blocks->current();
+                }
+            }
+            if($uncles->current() !== null){
+                if($current === null or $uncles->current()->getHeight() > $current->getHeight()){
+                    $current = $uncles->current();
+                }
+            }
+
+            if($current === null){
+                break;
+            }
+
+            if($blocks->current() === $current){
+                $blocks->next();
+            }else if($uncles->current() === $current){
+                $uncles->next();
+            }
+
+            yield $current;
+        }
+    }
+
+
+    /**
+     * @param int|null $limit
+     * @return \Iterator
      */
     public function getAllFound(int $limit = null) : \Iterator {
         $blocks = $this->getFound($limit);

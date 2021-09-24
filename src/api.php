@@ -41,6 +41,7 @@ function getBlockAsJSONData(P2PoolAPI $api, Block $b, $extraUncleData = false, $
         ]
     ];
 
+
     if($extraCoinbaseOutputData){
         $tx = $b->isMainFound() ? $api->getDatabase()->getCoinbaseTransaction($b) : null;
         $data["coinbase"]["payouts"] = [];
@@ -64,18 +65,26 @@ function getBlockAsJSONData(P2PoolAPI $api, Block $b, $extraUncleData = false, $
         ksort($data["coinbase"]["payouts"]);
     }
 
+    $weight = gmp_init($b->getDifficulty(), 16);
+
     if($b instanceof UncleBlock){
         $data["parent"] = [
             "id" => $b->getParentId(),
             "height" => $b->getParentHeight()
         ];
+
+        $weight = gmp_div(gmp_mul($weight, 100 - SIDECHAIN_UNCLE_PENALTY), 100);
     }else{
         $data["uncles"] = [];
         foreach ($api->getDatabase()->getUnclesByParentId($b->getId()) as $u){
+            $uncle_weight = gmp_div(gmp_mul(gmp_init($u->getDifficulty(), 16), SIDECHAIN_UNCLE_PENALTY), 100);
+            $weight = gmp_add($weight, $uncle_weight);
+
             if(!$extraUncleData){
                 $data["uncles"][] = [
                     "id" => $u->getId(),
                     "height" => $u->getHeight(),
+                    "weight" => $uncle_weight,
                 ];
             }else{
                 $data["uncles"][] = [
@@ -85,10 +94,13 @@ function getBlockAsJSONData(P2PoolAPI $api, Block $b, $extraUncleData = false, $
                     "timestamp" => $u->getTimestamp(),
                     "miner" => $api->getDatabase()->getMiner($u->getMiner())->getAddress(),
                     "pow" => $u->getPowHash(),
+                    "weight" => gmp_intval($uncle_weight),
                 ];
             }
         }
     }
+
+    $data["weight"] = gmp_intval($weight);
 
     return $data;
 }
@@ -484,12 +496,12 @@ $server = new HttpServer(function (ServerRequestInterface $request){
     if(preg_match("#^/api/shares$#", $request->getUri()->getPath(), $matches) > 0){
         parse_str($request->getUri()->getQuery(), $params);
 
-        $limit = isset($params["limit"]) ? (int) min(SIDECHAIN_PPLNS_WINDOW, $params["limit"]) : SIDECHAIN_PPLNS_WINDOW / 4;
-        $from = isset($params["from"]) ? (int) max(0, $params["from"]) : null;
+        $limit = isset($params["limit"]) ? (int) min(100, $params["limit"]) : 50;
+        $miner = isset($params["miner"]) ? (int) max(0, $params["miner"]) : null;
 
         $ret = [];
 
-        foreach ($api->getDatabase()->getBlocksInWindow($from, $limit) as $b){
+        foreach ($api->getDatabase()->getShares($limit, $miner) as $b){
             $ret[] = getBlockAsJSONData($api, $b, true, isset($params["coinbase"]));
         }
 

@@ -126,83 +126,79 @@ $server = new HttpServer(function (ServerRequestInterface $request){
                         $wsize = SIDECHAIN_PPLNS_WINDOW * 4;
                         getFromAPI("shares_in_range_window/" . $miner->id . "?from=".$pool_info->sidechain->height."&window=" . $wsize)->then(function ($shares) use ($wsize, $resolve, $miner, $pool_info, $headers) {
                             getFromAPI("payouts/" . $miner->id . "?limit=10")->then(function ($payouts) use ($wsize, $resolve, $miner, $shares, $pool_info, $headers) {
-                                $count = 30 * 4;
-                                $blocks_found = array_fill(0, $count, 0);
-                                $uncles_found = array_fill(0, $count, 0);
+                                getFromAPI("shares?limit=50&miner=" .$miner->id)->then(function ($shares) use ($payouts, $wsize, $resolve, $miner, $shares, $pool_info, $headers){
 
-                                $shares_in_window = 0;
-                                $uncles_in_window = 0;
-                                $long_diff = gmp_init(0);
-                                $window_diff = gmp_init(0);
+                                    $count = 30 * 4;
+                                    $blocks_found = array_fill(0, $count, 0);
+                                    $uncles_found = array_fill(0, $count, 0);
 
-                                $tip = $pool_info->sidechain->height;
-                                $wend = $tip - SIDECHAIN_PPLNS_WINDOW;
+                                    $shares_in_window = 0;
+                                    $uncles_in_window = 0;
+                                    $long_diff = gmp_init(0);
+                                    $window_diff = gmp_init(0);
 
-                                foreach ($shares as $s) {
-                                    if(isset($s->parent)){
-                                        $index = intdiv($tip - $s->parent->height, intdiv($wsize + $count - 1, $count));
-                                        $uncles_found[min($index, $count - 1)]++;
-                                        if($s->height > $wend){
-                                            $uncles_in_window++;
+                                    $tip = $pool_info->sidechain->height;
+                                    $wend = $tip - SIDECHAIN_PPLNS_WINDOW;
+
+                                    foreach ($shares as $s) {
+                                        if(isset($s->parent)){
+                                            $index = intdiv($tip - $s->parent->height, intdiv($wsize + $count - 1, $count));
+                                            $uncles_found[min($index, $count - 1)]++;
+                                            if($s->height > $wend){
+                                                $uncles_in_window++;
+                                                $long_diff = gmp_add($long_diff, $s->weight);
+                                            }
+                                        }else{
+                                            $index = intdiv($tip - $s->height, intdiv($wsize + $count - 1, $count));
+                                            $blocks_found[min($index, $count - 1)]++;
+                                            if($s->height > $wend){
+                                                $shares_in_window++;
+                                                $window_diff = gmp_add($window_diff, $s->weight);
+                                            }
                                             $long_diff = gmp_add($long_diff, $s->weight);
                                         }
-                                    }else{
-                                        $index = intdiv($tip - $s->height, intdiv($wsize + $count - 1, $count));
-                                        $blocks_found[min($index, $count - 1)]++;
-                                        if($s->height > $wend){
-                                            $shares_in_window++;
-                                            $window_diff = gmp_add($window_diff, $s->weight);
+                                    }
+
+                                    $shares_position = "[<";
+                                    foreach (array_reverse($blocks_found) as $i => $p){
+                                        if($i === (30 * 3)){
+                                            $shares_position .= "|";
                                         }
-                                        $long_diff = gmp_add($long_diff, $s->weight);
+                                        $shares_position .= ($p > 0 ? ($p > 9 ? "+" : (string) $p) : ".");
                                     }
-                                }
+                                    $shares_position .= "<]";
 
-                                $shares_position = "[<";
-                                foreach (array_reverse($blocks_found) as $i => $p){
-                                    if($i === (30 * 3)){
-                                        $shares_position .= "|";
+                                    $uncles_position = "[<";
+                                    foreach (array_reverse($uncles_found) as $i => $p){
+                                        if($i === (30 * 3)){
+                                            $uncles_position .= "|";
+                                        }
+                                        $uncles_position .= ($p > 0 ? ($p > 9 ? "+" : (string) $p) : ".");
                                     }
-                                    $shares_position .= ($p > 0 ? ($p > 9 ? "+" : (string) $p) : ".");
-                                }
-                                $shares_position .= "<]";
+                                    $uncles_position .= "<]";
 
-                                $uncles_position = "[<";
-                                foreach (array_reverse($uncles_found) as $i => $p){
-                                    if($i === (30 * 3)){
-                                        $uncles_position .= "|";
-                                    }
-                                    $uncles_position .= ($p > 0 ? ($p > 9 ? "+" : (string) $p) : ".");
-                                }
-                                $uncles_position .= "<]";
-
-                                usort($shares, function ($a, $b){
-                                   return $b->timestamp - $a->timestamp;
+                                    $resolve(render("miner.html", [
+                                        "refresh" => isset($headers["refresh"]) ? (int) $headers["refresh"] : false,
+                                        "pool" => $pool_info,
+                                        "miner" => $miner,
+                                        "last_shares" => $shares,
+                                        "last_payouts" => $payouts,
+                                        "window_weight" => gmp_intval($window_diff),
+                                        "weight" => gmp_intval($long_diff),
+                                        "window_count" => [
+                                            "blocks" => $shares_in_window,
+                                            "uncles" => $uncles_in_window,
+                                        ],
+                                        "count" => [
+                                            "blocks" => array_sum($blocks_found),
+                                            "uncles" => array_sum($uncles_found),
+                                        ],
+                                        "position" => [
+                                            "blocks" => $shares_position,
+                                            "uncles" => $uncles_position,
+                                        ],
+                                    ], 200, $headers));
                                 });
-
-                                $top = array_slice($shares, 0, 50);
-
-
-                                $resolve(render("miner.html", [
-                                    "refresh" => isset($headers["refresh"]) ? (int) $headers["refresh"] : false,
-                                    "pool" => $pool_info,
-                                    "miner" => $miner,
-                                    "last_shares" => $top,
-                                    "last_payouts" => $payouts,
-                                    "window_weight" => gmp_intval($window_diff),
-                                    "weight" => gmp_intval($long_diff),
-                                    "window_count" => [
-                                      "blocks" => $shares_in_window,
-                                      "uncles" => $uncles_in_window,
-                                    ],
-                                    "count" => [
-                                        "blocks" => array_sum($blocks_found),
-                                        "uncles" => array_sum($uncles_found),
-                                    ],
-                                    "position" => [
-                                        "blocks" => $shares_position,
-                                        "uncles" => $uncles_position,
-                                    ],
-                                ], 200, $headers));
                             });
                         });
                     });

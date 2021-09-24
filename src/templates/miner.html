@@ -104,6 +104,7 @@
         <tr>
             <th style="width: 8em;">P2Pool Height</th>
             <th style="width: 12em;">P2Pool Id</th>
+            <th style="width: 8em;">Monero Height</th>
             <th style="width: 8em;">Age <small>[h:m:s]</small></th>
             <th style="width: 8em;" title="Weight is the difficulty of mined share, with any uncle adjustments. It is variable, and is used in reward calculations">Weight</th>
             <th style="width: 12em;">Valuation</th>
@@ -112,6 +113,7 @@
         <tr>
             <th>{{ s.height }}</th>
             <td class="mono smaller">{{ s.id|slice(0, 10) ~ "..." ~ s.id|slice(-10) }}</td>
+            <td title="{{ s.main.id }}">{{ s.main.height }}</td>
             <td title="{{ s.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ s.timestamp)|time_elapsed_string_short }}</td>
             <td>{{ s.weight|si_units(1) }}</td>
             <td>
