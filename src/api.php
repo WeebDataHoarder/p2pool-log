@@ -497,7 +497,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
         parse_str($request->getUri()->getQuery(), $params);
 
         $limit = isset($params["limit"]) ? (int) min(100, $params["limit"]) : 50;
-        $miner = isset($params["miner"]) ? (int) max(0, $params["miner"]) : null;
+        $miner = isset($params["miner"]) ? (int) $params["miner"] : 0;
 
         $ret = [];
 
