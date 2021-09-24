@@ -14,66 +14,14 @@ class MoneroCoinbaseTransactionOutputs{
     /**
      * @param Miner[] $miners
      */
-    public function matchOutputs(array $miners, string $tx_privkey, array $hint = []): array {
+    public function matchOutputs(array $miners, string $tx_privkey): array {
         $matched = [];
-
-        $addr = [];
-        if(count($miners) === count($this->outputs)){
-            foreach ($miners as $miner){
-                $addr[] = gmp_init(implode(array_reverse(str_split($miner->getMoneroAddress()->getSpendPub(), 2))), 16);
-            }
-
-            usort($addr, function ($a, $b){
-                return gmp_cmp($a, $b);
-            });
-
-            $addr = array_map(function ($i){
-                return str_pad(gmp_strval($i, 16), 64, "0", STR_PAD_LEFT);
-            }, $addr);
-        }
-
-
-        $outputs = $this->outputs;
-
-        foreach ($outputs as $i => $o){
-            foreach ($miners as $ix => $miner){
-                $isValidHint = isset($hint[$miner->getId()]) and abs($hint[$miner->getId()] - (int) $o->amount) > 2;
-                if(count($hint) !== 0 and !$isValidHint){
-                    continue;
-                }
-                $ma = $miner->getMoneroAddress();
-
-                $isValidIndex = array_search(implode(array_reverse(str_split($ma->getSpendPub(), 2))), $addr) === $o->index;
-
-                if(
-                    ($isValidHint and $isValidIndex) //Skip expensive check if sort AND amount match
-                    or $ma->getEphemeralPublicKey($tx_privkey, $o->index) === $o->key
-                ){
+        foreach ($miners as $ix => $miner){
+            $ma = $miner->getMoneroAddress();
+            foreach ($this->outputs as $i => $o){
+                if($ma->getEphemeralPublicKey($tx_privkey, $o->index) === $o->key){
                     $matched[$miner->getId()] = clone $o;
-
-                    unset($outputs[$i]);
-                    unset($miners[$ix]);
-                    unset($hint[$ix]);
                     break;
-                }
-            }
-
-        }
-
-        //Match missed items if equal amounts exist on each side
-        if(count($outputs) === count($miners)){
-            foreach ($miners as $ix => $miner){
-                $ma = $miner->getMoneroAddress();
-                foreach ($outputs as $i => $o){
-
-                    if($ma->getEphemeralPublicKey($tx_privkey, $o->index) === $o->key){
-                        $matched[$miner->getId()] = clone $o;
-
-                        unset($outputs[$i]);
-                        unset($miners[$ix]);
-                        unset($hint[$ix]);
-                        break;
-                    }
                 }
             }
         }

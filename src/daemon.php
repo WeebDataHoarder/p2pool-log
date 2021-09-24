@@ -56,7 +56,7 @@ function processFoundBlockWithTransaction(Block $b, MoneroCoinbaseTransactionOut
         $miners[$minerId] = $api->getDatabase()->getMiner($minerId);
     }
 
-    $outputs = $tx->matchOutputs($miners, $b->getCoinbasePrivkey(), $payout_hint);
+    $outputs = $tx->matchOutputs($miners, $b->getCoinbasePrivkey());
     if(count($outputs) === count($miners)){
         $new_outputs = [];
         foreach ($outputs as $minerId => $o){
@@ -65,6 +65,9 @@ function processFoundBlockWithTransaction(Block $b, MoneroCoinbaseTransactionOut
 
         $coinbaseOutput = new CoinbaseTransaction($b->getCoinbaseId(), $b->getCoinbasePrivkey(), $new_outputs);
         return $api->getDatabase()->insertCoinbaseTransaction($coinbaseOutput);
+    }else{
+
+        echo "[OUTPUT] Could not find all outputs! Coinbase transaction " . $b->getCoinbaseId() . "\n";
     }
 
     return false;
