@@ -126,7 +126,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
                         $wsize = SIDECHAIN_PPLNS_WINDOW * 4;
                         getFromAPI("shares_in_range_window/" . $miner->id . "?from=".$pool_info->sidechain->height."&window=" . $wsize)->then(function ($shares) use ($wsize, $resolve, $miner, $pool_info, $headers) {
                             getFromAPI("payouts/" . $miner->id . "?limit=10")->then(function ($payouts) use ($wsize, $resolve, $miner, $shares, $pool_info, $headers) {
-                                getFromAPI("shares?limit=50&miner=" .$miner->id)->then(function ($shares) use ($payouts, $wsize, $resolve, $miner, $shares, $pool_info, $headers){
+                                getFromAPI("shares?limit=50&miner=" .$miner->id)->then(function ($lastshares) use ($payouts, $wsize, $resolve, $miner, $shares, $pool_info, $headers){
 
                                     $count = 30 * 4;
                                     $blocks_found = array_fill(0, $count, 0);
@@ -181,7 +181,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
                                         "refresh" => isset($headers["refresh"]) ? (int) $headers["refresh"] : false,
                                         "pool" => $pool_info,
                                         "miner" => $miner,
-                                        "last_shares" => $shares,
+                                        "last_shares" => $lastshares,
                                         "last_payouts" => $payouts,
                                         "window_weight" => gmp_intval($window_diff),
                                         "weight" => gmp_intval($long_diff),
