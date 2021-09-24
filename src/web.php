@@ -28,7 +28,7 @@ if(is_dir("/cache")){
 $twig = new Environment($loader, $options);
 
 class TwigExtraFunctions extends AbstractExtension{
-    public function getFilters() {
+    public function getFilters(): array {
         return [
             new TwigFilter('gmp_init', "gmp_init"),
             new TwigFilter('gmp_intval', "gmp_intval"),
@@ -53,7 +53,7 @@ class TwigExtraFunctions extends AbstractExtension{
 
 $twig->addExtension(new TwigExtraFunctions());
 
-function render(string $template, array $context = [], int $code = 200, array $headers = ["content-type" => "text/html; charset=utf-8"]){
+function render(string $template, array $context = [], int $code = 200, array $headers = ["content-type" => "text/html; charset=utf-8"]): Response {
     global $twig;
 
     try{
@@ -113,6 +113,11 @@ $server = new HttpServer(function (ServerRequestInterface $request){
         });
     }
 
+    if($request->getUri()->getPath() === "/api"){
+        return render("api.html", [], 200, $headers);
+    }
+
+
     if($request->getUri()->getPath() === "/miner" and isset($params["address"])){
         if(isset($params["refresh"])){
             $headers["refresh"] = "300";
@@ -124,7 +129,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
                     getFromAPI("pool_info", 5)->then(function ($pool_info) use ($resolve, $miner, $headers) {
 
                         $wsize = SIDECHAIN_PPLNS_WINDOW * 4;
-                        getFromAPI("shares_in_range_window/" . $miner->id . "?from=".$pool_info->sidechain->height."&window=" . $wsize)->then(function ($shares) use ($wsize, $resolve, $miner, $pool_info, $headers) {
+                        getFromAPI("shares_in_window/" . $miner->id . "?from=".$pool_info->sidechain->height."&window=" . $wsize)->then(function ($shares) use ($wsize, $resolve, $miner, $pool_info, $headers) {
                             getFromAPI("payouts/" . $miner->id . "?limit=10")->then(function ($payouts) use ($wsize, $resolve, $miner, $shares, $pool_info, $headers) {
                                 getFromAPI("shares?limit=50&miner=" .$miner->id)->then(function ($lastshares) use ($payouts, $wsize, $resolve, $miner, $shares, $pool_info, $headers){
 
@@ -209,7 +214,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
                     "error" => [
                         "code" => 404,
                         "message" => "Address Not Found",
-                        "content" => "You need to have mined at least one share in the past."
+                        "content" => "<div class=\"center\" style=\"text-align: center\">You need to have mined at least one share in the past. Come back later :)</div>"
                     ]
                 ], 404));
             }, function () use($resolve){
@@ -217,13 +222,12 @@ $server = new HttpServer(function (ServerRequestInterface $request){
                     "error" => [
                         "code" => 404,
                         "message" => "Address Not Found",
-                        "content" => "You need to have mined at least one share in the past."
+                        "content" => "<div class=\"center\" style=\"text-align: center\">You need to have mined at least one share in the past. Come back later :)</div>"
                     ]
                 ], 404));
             });
 
         });
-
     }
 
 
@@ -232,7 +236,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
     return render("error.html", [
         "error" => [
             "code" => 404,
-            "message" => "Not Found"
+            "message" => "Page Not Found"
         ]
     ], 404);
 });

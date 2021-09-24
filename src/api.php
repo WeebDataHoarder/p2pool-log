@@ -225,7 +225,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
         ], json_encode($returnData, JSON_UNESCAPED_SLASHES | ($isKnownBrowser ? JSON_PRETTY_PRINT : 0)));
     }
 
-    if(preg_match("#^/api/shares_in_range_window/(?P<miner>[0-9]+|4[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+)$#", $request->getUri()->getPath(), $matches) > 0){
+    if(preg_match("#^/api/shares_in_window/(?P<miner>[0-9]+|4[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+)$#", $request->getUri()->getPath(), $matches) > 0){
         $miner = (strlen($matches["miner"]) > 10 and $matches["miner"][0] === "4") ? $api->getDatabase()->getMinerByAddress($matches["miner"]) : null;
         if($miner === null and preg_match("#^[0-9]+$#", $matches["miner"]) > 0){
             $miner = $api->getDatabase()->getMiner((int) $matches["miner"]);
@@ -282,67 +282,6 @@ $server = new HttpServer(function (ServerRequestInterface $request){
                 "id" => $uncle->getId(),
                 "height" => $uncle->getHeight(),
                 "timestamp" => $uncle->getTimestamp(),
-                "weight" => gmp_intval(gmp_div(gmp_mul(gmp_init($uncle->getDifficulty(), 16), 100 - SIDECHAIN_UNCLE_PENALTY), 100))
-            ];
-        }
-
-        return new Response(200, [
-            "Content-Type" => "application/json; charset=utf-8"
-        ], json_encode($returnData, JSON_UNESCAPED_SLASHES | ($isKnownBrowser ? JSON_PRETTY_PRINT : 0)));
-    }
-
-    if(preg_match("#^/api/shares_in_current_window/(?P<miner>[0-9]+|4[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+)$#", $request->getUri()->getPath(), $matches) > 0){
-        $miner = (strlen($matches["miner"]) > 10 and $matches["miner"][0] === "4") ? $api->getDatabase()->getMinerByAddress($matches["miner"]) : null;
-        if($miner === null and preg_match("#^[0-9]+$#", $matches["miner"]) > 0){
-            $miner = $api->getDatabase()->getMiner((int) $matches["miner"]);
-        }
-        if($miner === null){
-            return new Response(404, [
-                "Content-Type" => "application/json; charset=utf-8"
-            ], json_encode(["error" => "not_found"]));
-        }
-
-        $returnData = [
-
-        ];
-
-        foreach ($api->getDatabase()->getBlocksByMinerIdInWindow($miner->getId()) as $block){
-            $r = [
-                "id" => $block->getId(),
-                "height" => $block->getHeight(),
-                "timestamp" => $block->getTimestamp(),
-                "weight" => gmp_intval($weight = gmp_init($block->getDifficulty(), 16)),
-                "uncles" => []
-            ];
-
-            foreach ($api->getDatabase()->getUnclesByParentId($block->getId()) as $u){
-                $uncle_weight = gmp_div(gmp_mul(gmp_init($u->getDifficulty(), 16), SIDECHAIN_UNCLE_PENALTY), 100);
-                $weight = gmp_add($weight, $uncle_weight);
-                $r["uncles"][] = [
-                    "id" => $u->getId(),
-                    "height" => $u->getHeight(),
-                    "weight" => gmp_intval($uncle_weight)
-                ];
-                $r["weight"] = gmp_intval($weight);
-            }
-
-            if(count($r["uncles"]) === 0){
-                unset($r["uncles"]);
-            }
-
-            $returnData[] = $r;
-
-        }
-
-        foreach ($api->getDatabase()->getUnclesByMinerIdInWindow($miner->getId()) as $uncle){
-            $returnData[] = [
-                "parent" => [
-                    "id" => $uncle->getParentId(),
-                    "height" => $uncle->getParentHeight()
-                ],
-                "id" => $uncle->getId(),
-                "height" => $uncle->getHeight(),
-                "timestamp" => $block->getTimestamp(),
                 "weight" => gmp_intval(gmp_div(gmp_mul(gmp_init($uncle->getDifficulty(), 16), 100 - SIDECHAIN_UNCLE_PENALTY), 100))
             ];
         }

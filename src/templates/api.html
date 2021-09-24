@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %} - API Documentation {% endblock %}
+
+{% block style %}
+{{ parent() }}
+
+pre {
+    padding: 2px;
+    border: 1px dashed #BBB;
+}
+{% endblock %}
+
+{% block content %}
+
+<div class="center" style="min-width: 800px; width: 50%">
+    <div>
+        <h2>API Documentation</h2>
+        <p>This site and API is in development. As such, returned data could be different, or methods be deprecated / replaced anytime. Though it will be avoided if possible :)</p>
+        <p>All the data showed on this site comes from the API or Monero. So if new features are added on site, it's possible to do so via the API.</p>
+        <p>At the moment there is no broad rate-limiting. If abuse is detected, temporary rate limits can be put in place. You can always run your own instance of this site/API, see <a href="https://github.com/WeebDataHoarder/p2pool-log">source code</a>.</p>
+        <p>Some historic data could be incomplete. These values have been replaced with all 0's / null bytes or 255 / 0xFF bytes depending on value.</p>
+        <p>In general, mandatory parameters are specified on the path, optional parameters on query.</p>
+        <p><strong>Knowledge of P2Pool internals is strongly advised.</strong> Feel free to ask questions on IRC.</p>
+        <p>Unless specified, all returned data is JSON with status code 200. A not found error will issue a status code 404 and JSON of <code>{"error": "not_found"}</code> or similar.</p>
+    </div>
+
+    <hr/>
+
+    <div>
+        <h3 class="mono">/api/pool_info</h3>
+        <p>Response contains general information on the current status of the P2Pool sidechain and Monero network, and other parameters.</p>
+        <p><em>.sidechain.effort.last</em> keys are Monero block id effort for last found blocks.</p>
+        <pre class="smaller">
+curl --silent https://p2pool.observer/api/pool_info
+{
+    "sidechain": {
+        "id": "3a62dbe4f836cb6eb22ce851f8c5b7e19fecd364fad9da20f7c2f7c8eceb3430",
+        "height": 204156,
+        "difficulty": "0000000000000000000000002242630f",
+        "timestamp": 1632491696,
+        "effort": {
+            "current": 42.023,
+            "average": 101.65,
+            "last": {
+                "519152470bdd3c04f43d10105189653ba31f4eac35523b11909e67a5c220bb5b": 28.17,
+                "2797537f37403b32b4334456ad52ea86d7ebd64f207d7b16faca3e6c0be64480": 302.01,
+                "45a4ed6c8345abc629493ec14fc40f97b934e6c5357718515aa8656b25b1a53e": 3.14,
+                "45ac03c34f10185dca89a465fd98e7386cfe9e370870ab5537a950b4f5e31e1f": 64.95,
+                "ade286d9c9650cdbcd2eb433880a1453fd58d276ca47076164bb35b9a68b7beb": 48.56,
+                "469bb4806550f0d8d9e03c2c6108a62c034e053301183541ac688323711a3866": 144.5,
+                "fccbc197f4625b093742ee158aaa75bb80a3f588ef94674da2c42bc5b94bdfb0": 62.32,
+                "b06578afbc72bdf89f8ea4315ff9c47213d9090108f86eeec75ab27abf7573cd": 80.97,
+                "5c294fca61dbe26b714e1fa7f0c7abec6d0f41c10ec0a291caac2b84c384d44c": 3.84,
+                "bab98e2b94f03cffcdd7e8795ddf7fc61a225c815d92b870132fcd32385d2a2d": 117.64,
+                "75cc5ab02eee03091bfca2072e146c50b69975c0ed69c6a98c330c6d8ae4ea7b": 229.03,
+                "ff201b345e69e7eafa9e17f1c7ae00618c60bf767455358c852a646cce3e2b4e": 119.85,
+                "178c11e170622bc65b47e028e0c857d3e509f1bebeda6f6a6f30e60d5c4963c7": 68.54,
+                "86fc4cc25ce06735290b2b49462a52320b9db65ee5a2225a6dade5d574e26bfb": 192.01,
+                "2c376ed1287023131599b1ef393151c76c576ce82df73cb7bfc7eb6da53f6cc6": 40.16,
+                "90ace5467345723de758ae6deb61044e361b79993c0419383bf5d92e847c9165": 26.56,
+                "b221dfcde5b6c59ac550ead21fd9cd058241ab26c659699f9f78726bec990c6b": 168.91,
+                "bfd87fec3a360b8bc989ca7a079a90fcfd3c3d7beebebc627094216a888df02e": 83.28,
+                "8b2282fe91799aa2e75fa6fac271bbf850a10a7db0659a05dda4fc3483e202f2": 59.39,
+                "fe6218e220f02e7f5596f32a0497b47f90e2e2ab5519b5c4bd522d416be529af": 34.86,
+                "fe761d800b964b99fd25dbd5bf9ec0546a2c9dcff3bd78143d2e170840b1dc07": 37.02,
+                "cf757a8203ff5fd48feb777b07538d9872e41aaaa6472282875f52104b425af7": 35.77,
+                "70296a22687e103f4e585cdf7b627a587b9260f74b4517a53dac84a922a30f03": 138.77,
+                "a31e3e948f7d5d16eb63f04ef5bcca078ece26e69679644ea6e5ac905dc615e2": 201.85,
+                "332fa77638b2e365ab249997c4c8b5bc95d68b61060574ebb40efe3ddb0420c0": 141.79,
+                "e2019d0957a220c07eabbbaae7bb3e6e801f98103e9cc04259490f90287e9077": 197.33,
+                "be958d873def2d72c53573b7f3c50110cb85b011d08ed3c49e9b7415dbebe56f": 42.39,
+                "676f70beb38bbe0c93459f84cefe326221369420edcb0b0b0e3238f77861ac25": 51.58,
+                "8813a744f795ba08549ecbcba9704457b53a5ce7f32620c280f5c3fb96a362fa": 65.1,
+                "488a772452b3cea58ca021dee36cd1ebcf8440a3c9377235edea182cd5633f77": 137.87,
+                "748aafa9ed94176560dbb69c7911ef7dd35e19901e517f33b84bc16477aff600": 18.84,
+                "e6345d81d4a6e0b792801b72c472fd2bbf9a7e6aa6d100f854528a963ca37d98": 94.1,
+                "b5d811013a4e38a3b7d5bb3de1aad29d457217dc90cedab107146b6774e455d1": 11.69,
+                "7e1e750e463cb18c9bc67d68215d49212a13ddf0bf7a89994ea38cc0cd94ed3c": 67.06,
+                "400a3014c4519ac95ab042e6afb3dcf62fe8a2f67cb088248117663d36da4e0e": 10.96,
+                "44c84abde2682548bf93c6a8a4546e3aaf2963da01f465aa87e4a230e667a405": 136.86,
+                "7d923e4461e28546860f8f234d9eb828f1d0b0c3b6142366aedbd59b482cf94e": 169.28,
+                "d0c1d8bbb6af7afc7861d8d8ea426d85cf52f4ee2af77e3c2e3e68be281d2624": 36.02,
+                "24dda1b025b6db877491d2aa134e0eddfc4ba93db462ed4a06be3b4ad859f97a": 80.68,
+                "a6e274007d4dc75a4844d7d6c7eb682d8c7c56f7ad62206ddf5a3583f382d4f0": 68.99,
+                "04613f76551b8aacfa8c6a1f49fa1123dcc4e79a4d26466c1ae042c93dc21f40": 109.68,
+                "2e90bbbeb18dbb535d6d369057a851fc1c9535cca9a65474659b7e06d6c68801": 44.53,
+                "135f0319afa427286adf14fbd81af9b216f808eed1f350666f9d66f75b88dc83": 245.42,
+                "3dc775b3a5423894ba1d229d4dd4ef0590b6c3c8aef8dc1f9b3069848ca23484": 73.18,
+                "cd6f78b9036d7e5dfe0a9debc640095c82e2c5c3b2dc0321e4964c98ad75ec76": 16.96,
+                "ebf713269b0300e234d8e69e7957bdcba0ccb51ad36f8f9ec326923db9b33dc4": 107.17,
+                "212c48ff8bc8ace3a39d53a038fc540cd0c429e3bda00e892db7aa56a5802ff1": 581.7,
+                "3f8fb365742f0cd443f4ca24239b644d0eac9f45517e2f591d2e0cd85175d12c": 242.56,
+                "848354a62ef6fd8b8a3a79ba8c203d526363ca1841ef71365b65704177c56ef2": 33.58,
+                "d910c460cea864ec1ddbe060b7c94a7b27c45f52a8c3ea872e036ea77ab961d3": 4.91
+            }
+        },
+        "window": {
+            "miners": 40,
+            "blocks": 2160,
+            "uncles": 55,
+            "weight": "00000000000000000000014cc2b965ba"
+        },
+        "window_size": 2160,
+        "block_time": 10,
+        "uncle_penalty": 20,
+        "found": "97",
+        "miners": "95"
+    },
+    "mainchain": {
+        "id": "3a0c416f3a1f5235ffd322417b36ce98340d6132b8c140ec7187804b682c001f",
+        "height": 2456414,
+        "difficulty": "0000000000000000000000497a57ebfd",
+        "block_time": 120
+    }
+}
+        </pre>
+    </div>
+
+    <hr/>
+
+    <div>
+        <h3 class="mono">/api/miner_info/&lt;id|address&gt;</h3>
+        <p>Response contains general information on a specific miner, referred by its internal <em>id</em> or known Monero <em>address</em>.</p>
+        <pre class="smaller">
+curl --silent https://p2pool.observer/api/miner_info/1
+{
+    "id": 1,
+    "address": "4B6tWMyFe3aNyxqvbYF9wNfsrPmaTGv149qi39m49wRSYUxch7CNRtjULeam11z14pS8UYYgmtkdJb71Y6frosYf8z9BkKV",
+    "shares": {
+        "blocks": 98803,
+        "uncles": 3041
+    },
+    "last_share_height": 204218,
+    "last_share_timestamp": 1632492306
+}
+        </pre>
+    </div>
+
+    <hr/>
+
+    <div>
+        <h3 class="mono">/api/shares_in_window/&lt;id|address&gt;?window=[window_size]&from=[height]</h3>
+        <p>Response contains shares on specified range window for a specific miner. Optional parameters are <em>height</em>, denoting the Tip where the window gets measured from, and <em>window_size</em>, max SIDECHAIN_PPLNS_WINDOW * 4</p>
+        <p>By default it will return current window shares, from current tip.</p>
+        <p>For each share, <em>weight</em> denotes how much is worth difficulty wise.</p>
+        <pre class="smaller">
+[result has been cut due to size, relevant portions shown]
+curl --silent https://p2pool.observer/api/shares_in_range_window/1
+[
+    {
+        "id": "41763b42dfb35fde8cc756c3f9304219833196710339d48a243e4ee99f1b4533",
+        "height": 204257,
+        "timestamp": 1632492592,
+        "weight": 578428835
+    },
+    {
+        "id": "f2b1227a8910c65bd5290706e55cdd5af31bf080ed63a2278c5d682f9a16132b",
+        "height": 204242,
+        "timestamp": 1632492426,
+        "weight": 692593796,
+        "uncles": [
+            {
+                "id": "5dbf40cf0407774e4a71fe5a2d65f2cb90d2f0f1e3b8b6be357eee77d7243b04",
+                "height": 204240,
+                "weight": 115416076
+            }
+        ]
+    },
+    {
+        "parent": {
+            "id": "f2b1227a8910c65bd5290706e55cdd5af31bf080ed63a2278c5d682f9a16132b",
+            "height": 204242
+        },
+        "id": "5dbf40cf0407774e4a71fe5a2d65f2cb90d2f0f1e3b8b6be357eee77d7243b04",
+        "height": 204240,
+        "timestamp": 1632492421,
+        "weight": 461664304
+    }
+]
+        </pre>
+    </div>
+
+    <hr/>
+
+    <div>
+        <h3 class="mono">/api/payouts/&lt;id|address&gt;?search_limit=[search_limit]</h3>
+        <p>Response contains payouts received by this miner due to blocks on Monero network. Optional parameters are <em>search_limit</em>, maximum amount of records to return. Defaults to 10</p>
+        <p><em>.[].coinbase.private_key</em> can be used to prove the payout is correct.</p>
+        <pre class="smaller">
+[result has been cut due to size, relevant portions shown]
+curl --silent https://p2pool.observer/api/payouts/1
+[
+    {
+        "id": "8114a983629e6d64083dc193fed0b9eda05e4369f78c4be851617a1cf0f2649a",
+        "height": 203934,
+        "main": {
+            "id": "519152470bdd3c04f43d10105189653ba31f4eac35523b11909e67a5c220bb5b",
+            "height": 2456399
+        },
+        "timestamp": 1632489764,
+        "coinbase": {
+            "id": "bb55d988537b60f4bf82280eadd572608ce0239ac62f7d9cc8741ea18aaf493e",
+            "reward": 808711259192,
+            "private_key": "101b706ac3beb614697eba1d90a12cb3bf766f243f3d2f3a98d717bf6b340e08",
+            "index": 26
+        }
+    },
+    {
+        "id": "60dada9fedd4369a39778c0c7a8b39bf9304ac10842564e620f872070fc854a4",
+        "height": 203789,
+        "main": {
+            "id": "2797537f37403b32b4334456ad52ea86d7ebd64f207d7b16faca3e6c0be64480",
+            "height": 2456391
+        },
+        "timestamp": 1632488207,
+        "coinbase": {
+            "id": "da585bcfeda2213ef04fb61c65de2930621f12080296c3d73a1780d5c18ed640",
+            "reward": 827836253205,
+            "private_key": "77f38db6b0aaa04aa45554ce18c4b81d0ecaa82b70cc96a524ca50d979ba930c",
+            "index": 23
+        }
+    }
+]
+        </pre>
+    </div>
+
+    <hr/>
+
+    More to be here soon, see <a href="https://github.com/WeebDataHoarder/p2pool-log/blob/master/src/api.php">api.php</a>
+</div>
+
+{% endblock %}
