@@ -19,7 +19,7 @@ pre {
         <p>This site and API is in development. As such, returned data could be different, or methods be deprecated / replaced anytime. Though it will be avoided if possible :)</p>
         <p>All the data showed on this site comes from the API or Monero. So if new features are added on site, it's possible to do so via the API.</p>
         <p>At the moment there is no broad rate-limiting. If abuse is detected, temporary rate limits can be put in place. You can always run your own instance of this site/API, see <a href="https://github.com/WeebDataHoarder/p2pool-log">source code</a>.</p>
-        <p>Some historic data could be incomplete. These values have been replaced with all 0's / null bytes or 255 / 0xFF bytes depending on value.</p>
+        <p>Some historical data could be incomplete. These values have been replaced with all 0's / null bytes or 255 / 0xFF bytes depending on value. Some raw block records do not exist.</p>
         <p>In general, mandatory parameters are specified on the path, optional parameters on query.</p>
         <p><strong>Knowledge of P2Pool internals is strongly advised.</strong> Feel free to ask questions on IRC.</p>
         <p>Unless specified, all returned data is JSON with status code 200. A not found error will issue a status code 404 and JSON of <code>{"error": "not_found"}</code> or similar.</p>
@@ -227,7 +227,217 @@ curl --silent https://p2pool.observer/api/payouts/1
 
     <hr/>
 
-    More to be here soon, see <a href="https://github.com/WeebDataHoarder/p2pool-log/blob/master/src/api.php">api.php</a>
+    <div>
+        <h3 class="mono">/api/found_blocks?limit=[limit][&coinbase]</h3>
+        <p>Response contains last found block records on the Monero network by P2Pool. Optional parameters are <em>limit</em>, maximum amount of records to return, defaults to 50, max 100. Additionally, you can pass the <em>coinbase</em> parameter to receive decoded coinbase outputs.</p>
+        <pre class="smaller">
+curl --silent https://p2pool.observer/api/found_blocks?limit=2
+[
+    {
+        "id": "6b54f8a82a34e50b9be6d467200cbcf84e2bc4a2239276bb6e2997188c7a53bc",
+        "height": 210983,
+        "previous_id": "1e4459ce7dc52097d07c303fef8a3123eaaf084f38e4c3d5b85b62ab7438e5c9",
+        "coinbase": {
+            "id": "710bab0380ba1d3424f0a8c5e9fdc047cb9f464a418abd307e666168e7261580",
+            "reward": 853892158346,
+            "private_key": "3e42dc1c7f2fe865b90afbffa18fe2559cc541aca9353606c23240c796d4a907"
+        },
+        "difficulty": "000000000000000000000000328ebf11",
+        "timestamp": 1632560460,
+        "miner": "4B6tWMyFe3aNyxqvbYF9wNfsrPmaTGv149qi39m49wRSYUxch7CNRtjULeam11z14pS8UYYgmtkdJb71Y6frosYf8z9BkKV",
+        "pow": "83a92f76fc91f91d17fea89a779912f2643eaed658d903000f343e0000000000",
+        "main": {
+            "id": "65f21ff0373b875f438907ea7ff2c210fee002f27d1729d78739b0ae951ce868",
+            "height": 2457009,
+            "found": true
+        },
+        "template": {
+            "id": "561b4b392a2c3f2a55494ca607f689f55a970b08f5cf48366889519d41144030",
+            "difficulty": "000000000000000000000049325bfc05"
+        },
+        "uncles": [],
+        "weight": 848215825
+    },
+    {
+        "id": "c3a42058d22fd6af66688e973d3cc54497982c5ccbe1e173881862fd79dc7b99",
+        "height": 210830,
+        "previous_id": "b29876b347d18192186d03e02729c722cb43313bd35840a403ea1bf0c7c1117e",
+        "coinbase": {
+            "id": "b0f71e55a50c96aafbd7a4b8aee8bcaaae4bbe7a6af478ded2accd6f4dfb098f",
+            "reward": 855868955473,
+            "private_key": "c51b2e5c95be6aa732342c09cfe9344cbe05d17f51fb30cdea152b923f187806"
+        },
+        "difficulty": "000000000000000000000000337a46fe",
+        "timestamp": 1632559007,
+        "miner": "4B6tWMyFe3aNyxqvbYF9wNfsrPmaTGv149qi39m49wRSYUxch7CNRtjULeam11z14pS8UYYgmtkdJb71Y6frosYf8z9BkKV",
+        "pow": "a479db10899c16c1da8f810a01c1a34b87da59987b73ff58e5e7bb0100000000",
+        "main": {
+            "id": "b7dd7e469e3112334bc7b1f38af724c30a1a920b8c45d444bba973eb7061dbb2",
+            "height": 2457000,
+            "found": true
+        },
+        "template": {
+            "id": "d95a750e927879bbde5570f1a679d703b479b1a59611e7ae7ec553a5bbc0a4e3",
+            "difficulty": "000000000000000000000048efdd8589"
+        },
+        "uncles": [],
+        "weight": 863651582
+    }
+]
+        </pre>
+    </div>
+
+
+    <hr/>
+
+    <div>
+        <h3 class="mono">/api/shares?limit=[limit]&miner=[minerId]</h3>
+        <p>Response contains last found share records on P2Pool. Optional parameters are <em>limit</em>, maximum amount of records to return, defaults to 50, max SIDECHAIN_PPLNS_WINDOW. Additionally, you can pass the <em>miner</em> to select shares from that miner only. <em>coinbase</em> parameter can also be used here to decode coinbase outputs</p>
+        <pre class="smaller">
+curl --silent https://p2pool.observer/api/shares?limit=2
+[
+    {
+        "id": "eec1d58aeee6e22177eb119c044897d96f69d293b5b875ed054a7ef0bd132d7c",
+        "height": 211563,
+        "previous_id": "a46d9d382424d0082a837576111ebd6adc41a590e48b4f6ae56436740ea14892",
+        "coinbase": {
+            "id": "579ef16fdc77e6e309849a06306474caf581011dac605da4e82099133eea3b47",
+            "reward": 853439767255,
+            "private_key": "59d609b7d3d45e5879da7bc32b1e9ac34dffeba61d267c53abbf32cb98088208"
+        },
+        "difficulty": "00000000000000000000000032640d65",
+        "timestamp": 1632566502,
+        "miner": "4B6tWMyFe3aNyxqvbYF9wNfsrPmaTGv149qi39m49wRSYUxch7CNRtjULeam11z14pS8UYYgmtkdJb71Y6frosYf8z9BkKV",
+        "pow": "88daeb5f680aec5a2342e565f69ca7f3dbc0457d6e1a5d4992dc448003000000",
+        "main": {
+            "id": "17d956e1cb92fe8e0b0c0160b1fbed7aeb58a2989a9ecea4c8dd77610d7b557e",
+            "height": 2457069,
+            "found": false
+        },
+        "template": {
+            "id": "c743d838f9b2bee4cfc1b279b4f47b70615194fddaf0e9a2ac9935306ee6c374",
+            "difficulty": "00000000000000000000004acb8608bf"
+        },
+        "uncles": [],
+        "weight": 845417829
+    },
+    {
+        "id": "a46d9d382424d0082a837576111ebd6adc41a590e48b4f6ae56436740ea14892",
+        "height": 211562,
+        "previous_id": "3c15ff85db8d533e3bcfe85e0d514d515c4e879d199639fa3f69930c4a44985c",
+        "coinbase": {
+            "id": "10463f06dcdddf9f4ded3c93f56dd6d3e2325ba79b00caa82194804e33d41c9d",
+            "reward": 854186244515,
+            "private_key": "5c09f050508eabc6ab1edff0e4d4dddc951b9a5f059bbac9bef210bb26ef0e09"
+        },
+        "difficulty": "0000000000000000000000003265620a",
+        "timestamp": 1632566499,
+        "miner": "46AR5jN9eNKa38nWS1u4EJPejRcqyfL5P913FHipe48VfL1D14eBnrD8DBJASa6PQETbo2FVQYxmZHUWKzapRV31TMzArh1",
+        "pow": "8c0a64faef4d90c6900b807c85f03b7561b45e87ad9794a9028337cc04000000",
+        "main": {
+            "id": "4e11aa34efeb225d80050cf49a0750d09f69063773b27135aca4b7411cf367e0",
+            "height": 2457068,
+            "found": false
+        },
+        "template": {
+            "id": "0de5daa8dab8805abf3cd95b48d8bbd0a0b05841e458b73141c764d31b0c9d4a",
+            "difficulty": "00000000000000000000004a97bc16d9"
+        },
+        "uncles": [],
+        "weight": 845505034
+    }
+]
+        </pre>
+    </div>
+
+
+    <hr/>
+
+    <div>
+        <h3 class="mono">/api/block_by_id/&lt;blockId&gt;[/raw]</h3>
+        <p>Response contains a block/share record on P2Pool by Id. You can select the JSON version or the binary hex format (various format versions exist, decoding is documented by source code). <em>coinbase</em> parameter can also be used here to decode coinbase outputs</p>
+        <pre class="smaller">
+curl --silent https://p2pool.observer/api/block_by_id/bc827aeecb5a5254cec6c2fc9a07f49c1d3c03b92dea39c5d9b3fbb19affe0ef
+{
+    "id": "bc827aeecb5a5254cec6c2fc9a07f49c1d3c03b92dea39c5d9b3fbb19affe0ef",
+    "height": 158450,
+    "previous_id": "da79d3ff3f0dcac0a4f4ea9bfc980f33989419c9cb969aa359e771539c7bac1c",
+    "coinbase": {
+        "id": "d11cde62dfec6e7b06bda411b5443af9dd1156d5d21ad6991afffc9bb20a89a0",
+        "reward": 860707347019,
+        "private_key": "3554138cbb2e22dcb88dcd80da788873c2e1e4a379e82c477b4dd8b5ed309b0d"
+    },
+    "difficulty": "00000000000000000000000021057a98",
+    "timestamp": 1632020086,
+    "miner": "47ogPNVsjtjG6bzGy9MtcogaxbRa4cMCtfzZpoHAGFmKjRhSWrzBLTo3JzBTN4H1gDNRSMKL1SSEoTpGYK4vKiJgJfdroRx",
+    "pow": "6890bd6d4dcf652978444d6d9c485f18ba2b3a51ed81a3ef1cc5310300000000",
+    "main": {
+        "id": "fa4219e740b9bb1f83ec7cde61db5498409e7d3bf3e1e2ead4fe1736529e6fd2",
+        "height": 2452518,
+        "found": true
+    },
+    "template": {
+        "id": "e9d6a0f34c0ca1b81ed2bee4baccb2d4ddf0bc452109ee95d67d6e45554244d7",
+        "difficulty": "00000000000000000000004bfff00d19"
+    },
+    "uncles": [],
+    "weight": 554007192
+}
+        </pre>
+    </div>
+
+
+
+    <hr/>
+
+    <div>
+        <h3 class="mono">/api/block_by_height/&lt;blockHeight&gt;[/raw]</h3>
+        <p>Response contains a block/share record on P2Pool by height. You can select the JSON version or the binary hex format (various format versions exist, decoding is documented by source code). <em>coinbase</em> parameter can also be used here to decode coinbase outputs</p>
+        <pre class="smaller">
+curl --silent https://p2pool.observer/api/block_by_height/158450
+{
+    "id": "bc827aeecb5a5254cec6c2fc9a07f49c1d3c03b92dea39c5d9b3fbb19affe0ef",
+    "height": 158450,
+    "previous_id": "da79d3ff3f0dcac0a4f4ea9bfc980f33989419c9cb969aa359e771539c7bac1c",
+    "coinbase": {
+        "id": "d11cde62dfec6e7b06bda411b5443af9dd1156d5d21ad6991afffc9bb20a89a0",
+        "reward": 860707347019,
+        "private_key": "3554138cbb2e22dcb88dcd80da788873c2e1e4a379e82c477b4dd8b5ed309b0d"
+    },
+    "difficulty": "00000000000000000000000021057a98",
+    "timestamp": 1632020086,
+    "miner": "47ogPNVsjtjG6bzGy9MtcogaxbRa4cMCtfzZpoHAGFmKjRhSWrzBLTo3JzBTN4H1gDNRSMKL1SSEoTpGYK4vKiJgJfdroRx",
+    "pow": "6890bd6d4dcf652978444d6d9c485f18ba2b3a51ed81a3ef1cc5310300000000",
+    "main": {
+        "id": "fa4219e740b9bb1f83ec7cde61db5498409e7d3bf3e1e2ead4fe1736529e6fd2",
+        "height": 2452518,
+        "found": true
+    },
+    "template": {
+        "id": "e9d6a0f34c0ca1b81ed2bee4baccb2d4ddf0bc452109ee95d67d6e45554244d7",
+        "difficulty": "00000000000000000000004bfff00d19"
+    },
+    "uncles": [],
+    "weight": 554007192
+}
+        </pre>
+    </div>
+
+
+
+    <hr/>
+    <div>
+        <h3>Redirect APIs</h3>
+        <p>Several endpoints are available that redirect/forward your request via <em>Location</em> HTTP header to the relevant API listed above.</p>
+        <p>
+            <h4 class="mono">/api/last_found[/raw]?...</h4>
+            Redirects to the <em>/api/block_by_id/...</em> record for the last block found on the Monero network by P2Pool.
+        </p>
+        <p>
+        <h4 class="mono">/api/tip[/raw]?...</h4>
+        Redirects to the <em>/api/block_by_id/...</em> record for the last share found by P2Pool.
+        </p>
+    </div>
 </div>
 
 {% endblock %}

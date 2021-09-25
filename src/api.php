@@ -435,7 +435,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
     if(preg_match("#^/api/shares$#", $request->getUri()->getPath(), $matches) > 0){
         parse_str($request->getUri()->getQuery(), $params);
 
-        $limit = isset($params["limit"]) ? (int) min(100, $params["limit"]) : 50;
+        $limit = isset($params["limit"]) ? (int) min(SIDECHAIN_PPLNS_WINDOW, $params["limit"]) : 50;
         $miner = isset($params["miner"]) ? (int) $params["miner"] : 0;
 
         $ret = [];
