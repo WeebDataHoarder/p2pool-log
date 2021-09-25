@@ -256,7 +256,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                         }
                     }
 
-                    if($total !== null){
+                    if($total !== 0){
                         arsort($minerAmount);
                         reset($minerAmount);
                         $index = key($minerAmount);
