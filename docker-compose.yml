@@ -31,6 +31,7 @@ services:
       - ./docker/nginx/snippets/cors.conf:/etc/nginx/snippets/cors.conf:ro
       - ./docker/nginx/snippets/csp.conf:/etc/nginx/snippets/csp.conf:ro
       - ./docker/nginx/snippets/security-headers.conf:/etc/nginx/snippets/security-headers.conf:ro
+      - ./docker/nginx/snippets/onion-headers.conf:/etc/nginx/snippets/onion-headers.conf:ro
       - ./docker/nginx/site.conf:/etc/nginx/conf.d/site.conf:ro
     depends_on:
       - api
