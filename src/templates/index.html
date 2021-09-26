@@ -21,7 +21,7 @@
             <th style="width: 15em">Monero Hashrate</th>
         </tr>
         <tr>
-            <td title="{{ pool.sidechain.id }}">{{ pool.sidechain.height }}</td>
+            <td title="{{ pool.sidechain.id }}"><a href="/share/{{ pool.sidechain.id }}">{{ pool.sidechain.height }}</a></td>
             <td>{{ pool.sidechain.difficulty|gmp_init(16)|gmp_div(pool.sidechain.block_time)|gmp_intval|si_units(2) }}H/s</td>
             <td title="{{ pool.mainchain.id }}">{{ pool.mainchain.height }}</td>
             <td>{{ pool.mainchain.difficulty|gmp_init(16)|gmp_div(pool.mainchain.block_time)|gmp_intval|si_units(2) }}H/s</td>
