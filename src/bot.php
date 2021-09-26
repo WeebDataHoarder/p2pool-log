@@ -129,7 +129,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                         sendIRCMessage("Invalid Monero address " . $matches[2], $answer);
                         return;
                     }
-                }catch (\Exception $e){
+                }catch (\Throwable $e){
                     sendIRCMessage("Invalid Monero address " . $matches[2], $answer);
                     return;
                 }
@@ -162,7 +162,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                         sendIRCMessage("Invalid Monero address " . $matches[2], $answer);
                         return;
                     }
-                }catch (\Exception $e){
+                }catch (\Throwable $e){
                     sendIRCMessage("Invalid Monero address " . $matches[2], $answer);
                     return;
                 }

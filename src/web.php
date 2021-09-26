@@ -59,7 +59,7 @@ function render(string $template, array $context = [], int $code = 200, array $h
 
     try{
         return new Response($code, $headers, $twig->render($template, $context));
-    }catch (\Exception $e){
+    }catch (\Throwable $e){
         try{
             return new Response(500, [
 
@@ -70,7 +70,7 @@ function render(string $template, array $context = [], int $code = 200, array $h
                     "content" => "<pre>".htmlspecialchars($e->getMessage() . "\n\n" . $e->getTraceAsString(), ENT_HTML5)."</pre>",
                 ]
             ]));
-        }catch (\Exception $e){
+        }catch (\Throwable $e){
             return new Response(500, [
                 "Content-Type" => "text/plain"
             ], $e->getMessage() . "\n\n" . $e->getTraceAsString());
@@ -146,7 +146,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
                         $raw = null;
                         try{
                             $raw = BinaryBlock::fromHexDump($rawBlock);
-                        }catch (\Exception $e){
+                        }catch (\Throwable $e){
 
                         }
 

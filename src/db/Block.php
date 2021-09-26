@@ -70,7 +70,7 @@ class Block{
      * @return Block|null
      * @throws \Exception
      */
-    public static function fromBinaryBlock(Database $database, BinaryBlock $b, $knownUncles = [], array &$uncles = []) : Block{
+    public static function fromBinaryBlock(Database $database, BinaryBlock $b, array $knownUncles = [], array &$uncles = []) : Block{
         $miner = $database->getOrCreateMinerByAddress($b->getPublicAddress());
         if($miner === null){
             throw new \Exception("Could not get or create miner");

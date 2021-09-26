@@ -55,7 +55,7 @@ class P2PoolAPI{
     public function getShareFromFailedRawEntry(string $id) : ?Block{
         try{
             return Block::fromBinaryBlock($this->db, BinaryBlock::fromHexDump($this->getFailedRawBlock($id)));
-        }catch (\Exception $e){
+        }catch (\Throwable $e){
             return null;
         }
     }
@@ -69,7 +69,7 @@ class P2PoolAPI{
     public function getShareFromRawEntry(string $id, array &$uncles = []) : ?Block{
         try{
             $raw = BinaryBlock::fromHexDump($this->getRawBlock($id));
-        }catch (\Exception $e){
+        }catch (\Throwable $e){
             return null;
         }
 
@@ -78,8 +78,8 @@ class P2PoolAPI{
         foreach ($raw->getUncles() as $uncle){
             try{
                 $u[] = BinaryBlock::fromHexDump($this->getRawBlock($uncle));
-            }catch (\Exception $e){
-                return null;
+            }catch (\Throwable $e){
+
             }
         }
 
