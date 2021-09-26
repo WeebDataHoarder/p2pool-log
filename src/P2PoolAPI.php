@@ -38,7 +38,8 @@ class P2PoolAPI{
      * @return Block|null
      */
     public function getShareEntry(int $height, array &$uncles = []) : ?Block{
-        return Block::fromJSONObject($this->db, json_decode(file_get_contents($this->getBlockPath($height)), false), $uncles);
+        $ob = json_decode(file_get_contents($this->getBlockPath($height)), false);
+        return is_object($ob) ? Block::fromJSONObject($this->db, $ob, $uncles) : null;
     }
 
     /**
