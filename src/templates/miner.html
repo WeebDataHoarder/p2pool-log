@@ -6,9 +6,9 @@
 
 <div style="text-align: center; font-weight: bold;">
     {% if refresh %}
-    <a href="/miner?address={{ miner.address }}">Autorefresh is ON ({{ refresh }} s)</a>
+    <a href="/miner/{{ miner.address }}">Autorefresh is ON ({{ refresh }} s)</a>
     {% else %}
-    <a href="/miner?address={{ miner.address }}&refresh">Autorefresh is OFF</a>
+    <a href="/miner/{{ miner.address }}&refresh">Autorefresh is OFF</a>
     {% endif %}
 </div>
 
@@ -86,7 +86,7 @@
         {% for p in last_payouts %}
         <tr>
             <th title="{{ p.main.id }}"><a href="/b/{{ p.main.height|benc }}">{{ p.main.height }}</a></th>
-            <th title="{{ p.id }}">{{ p.height }}</th>
+            <th title="{{ p.id }}"><a href="/share/{{ p.id }}">{{ p.height }}</a></th>
             <td title="{{ p.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ p.timestamp)|time_elapsed_string_short }}</td>
             <td class="small">{{ p.coinbase.reward|bcdiv("1000000000000", 12) }} XMR</td>
             <td title="{{ p.coinbase.id }}" class="mono small"><a href="/c/{{ p.height|benc }}">{{ p.coinbase.id|slice(0, 10) ~ "..." ~ p.coinbase.id|slice(-10) }}</a></td>
@@ -112,7 +112,7 @@
         {% for s in last_shares %}
         <tr>
             <th>{{ s.height }}</th>
-            <td class="mono smaller">{{ s.id|slice(0, 10) ~ "..." ~ s.id|slice(-10) }}</td>
+            <td class="mono smaller"><a href="/share/{{ s.id }}">{{ s.id|slice(0, 10) ~ "..." ~ s.id|slice(-10) }}</a></td>
             <td title="{{ s.main.id }}">{{ s.main.height }}</td>
             <td title="{{ s.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ s.timestamp)|time_elapsed_string_short }}</td>
             <td>{{ s.weight|si_units(1) }}</td>

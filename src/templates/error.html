@@ -3,10 +3,13 @@
 {% block title %} - Error {{ error.code }} {% endblock %}
 
 {% block content %}
+<div class="center" style="text-align: center">
     <h2>Error {{ error.code }} - {{ error.message }}</h2>
 
     {% if error.content|length > 0 %}
-        {{ error.content|raw }}
+    {{ error.content|raw }}
     {% endif %}
+</div>
+
 
 {% endblock %}

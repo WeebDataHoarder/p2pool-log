@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %} - Height {{ block.height }} {% endblock %}
+
+{% block content %}
+
+
+
+<div class="center" style="text-align: center">
+
+    {% if block.main.found %}
+    <h1 style="color:#00C000">This share mined Monero block at height {{ block.main.height }}</h1>
+    {% endif %}
+    <br/>
+
+    <table class="center" style="max-width: calc(8em + 28em + 8em + 28em)">
+        <tr>
+            {% if block.parent is defined %}
+            <td colspan="2"><a href="/share/{{ block.parent.id }}">&lt;&lt; Parent share</a></td>
+            <td colspan="2">Uncles do not have next blocks</td>
+            {% else %}
+            <td colspan="2"><a href="/share/{{ block.previous_id }}">&lt;&lt; Previous share</a></td>
+            <td colspan="2"><a href="/share/{{ block.height + 1 }}">Next share &gt;&gt;</a></td>
+            {% endif %}
+        </tr>
+        <tr><td colspan="4"><h2>Share information</h2></td></tr>
+        <tr>
+            <th style="width: 8em">P2Pool Height</th>
+            <th style="width: 28em">P2Pool Id</th>
+            <th style="width: 8em">Monero Height</th>
+            <th style="width: 28em">Monero Id</th>
+        </tr>
+        <tr>
+            <td>{{ block.height }}</td>
+            <td class="mono smaller">{{ block.id }}</td>
+
+            {% if block.main.found %}
+            <td><a href="/b/{{ block.main.height|benc }}">{{ block.main.height }}</a></td>
+            <td class="mono smaller"><a href="/b/{{ block.main.height|benc }}">{{ block.main.id }}</a></td>
+            {% else %}
+            <td>{{ block.main.height }}</td>
+            <td class="mono smaller">{{ block.main.id }}</td>
+            {% endif %}
+        </tr>
+        <tr><td colspan="4">&nbsp;</td></tr>
+        <tr>
+            <th>Age <small>[h:m:s]</small></th>
+            <th>PoW Hash</th>
+            <th>Miner</th>
+            <th>Difficulty</th>
+        </tr>
+        <tr>
+            <td title="{{ block.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ block.timestamp)|time_elapsed_string_short }}</td>
+            <td class="mono smaller">{{ block.pow }}</td>
+            <td title="{{ block.miner }}" class="mono small"><a href="/miner/{{ block.miner }}">{{ block.miner|slice(0, 10) ~ "..." ~ block.miner|slice(-10) }}</a></td>
+            <td class="mono">{{ block.difficulty }}</td>
+        </tr>
+        <tr><td colspan="4">&nbsp;</td></tr>
+        <tr>
+            <th>Valuation</th>
+            <th>Coinbase Id</th>
+            <th>Coinbase Reward</th>
+            <th>Coinbase Private Key</th>
+        </tr>
+        <tr>
+            <td>
+                {% if block.parent %}
+                {{ 100 - pool.sidechain.uncle_penalty }}% (uncle)
+                {% else %}
+                100%
+                {% if block.uncles and block.uncles|length > 0 %}
+                + {{ pool.sidechain.uncle_penalty }}% of {{ block.uncles|length }} uncle(s)
+                {% endif %}
+                {% endif %}
+            </td>
+            {% if block.main.found %}
+            <td class="mono smaller"><a href="/c/{{ block.height|benc }}">{{ block.coinbase.id }}</a></td>
+            {% else %}
+            <td class="mono smaller">{{ block.coinbase.id }}</td>
+            {% endif %}
+            <td class="small">{{ block.coinbase.reward|bcdiv("1000000000000", 12) }} XMR</td>
+            <td class="mono smaller">{{ block.coinbase.private_key }}</td>
+        </tr>
+    </table>
+</div>
+
+{% if raw is not null %}
+<div class="center" style="text-align: center">
+    {% if raw.getUncles()|length > 0 %}
+    <h2>Uncle shares</h2>
+    <ul class="mono">
+        {% for u in raw.getUncles() %}
+        <li><a href="/share/{{ u }}">{{ u }}</a></li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <h2>Coinbase Transaction</h2>
+
+    {% if block.main.found %}
+    <table class="center" style="max-width: calc(8em + 28em + 12em + 10em)">
+        <tr><td colspan="4" class="mono smaller">{{ raw.getCoinbaseTxExtra() }}</td></tr>
+        <tr><td colspan="4">&nbsp;</td></tr>
+    {% else %}
+    <table class="center" style="max-width: calc(8em + 28em + 10em)">
+        <tr><td colspan="3" class="mono smaller">{{ raw.getCoinbaseTxExtra() }}</td></tr>
+        <tr><td colspan="3">&nbsp;</td></tr>
+    {% endif %}
+        <tr>
+            <th style="width: 8em">Output Index</th>
+            <th style="width: 28em">Ephemeral Public Key</th>
+            {% if block.main.found %}
+            <th style="width: 12em">Payout Address</th>
+            {% endif %}
+            <th style="width: 10em">Reward</th>
+        </tr>
+        {% for t in raw.getCoinbaseTxOutputs %}
+        <tr>
+            <td>{{ t.index }}</td>
+            <td class="mono smaller">{{ t.ephemeralPublicKey }}</td>
+            {% if block.main.found and attribute(block.coinbase.payouts, t.index) is defined %}
+            {% set miner = attribute(block.coinbase.payouts, t.index).address %}
+            <td title="{{ miner }}" class="mono small"><a href="/miner/{{ miner }}">{{ miner|slice(0, 10) ~ "..." ~ miner|slice(-10) }}</a></td>
+            {% endif %}
+            <td class="small">{{ t.reward|bcdiv("1000000000000", 12) }} XMR</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% if raw.getTransactions()|length > 0 %}
+    <h2>Included Transactions</h2>
+    <ul class="mono">
+        {% for t in raw.getTransactions %}
+        <li><a href="/t/{{ t|henc }}">{{ t }}</a></li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

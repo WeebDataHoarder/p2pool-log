@@ -347,6 +347,12 @@ $server = new HttpServer(function (ServerRequestInterface $request){
         ]);
     }
 
+    if(preg_match("#^/api/redirect/transaction/(?P<tx_id>.?[0-9A-Za-z]+)$#", $request->getUri()->getPath(), $matches) > 0){
+        return new Response(302, [
+            "Location" => "https://xmrchain.net/tx/".Utils::decodeHexBinaryNumber($matches["tx_id"], 32)
+        ]);
+    }
+
     if(preg_match("#^/api/redirect/coinbase/(?P<height>[0-9]+|.?[0-9A-Za-z]+)$#", $request->getUri()->getPath(), $matches) > 0){
         $b = $api->getDatabase()->getBlockByHeight(Utils::decodeBinaryNumber($matches["height"]));
         if($b === null){
@@ -387,7 +393,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
             ], json_encode(["error" => "not_found"]));
         }
         return new Response(302, [
-            "Location" => "/miner?address=".$miner->getAddress()
+            "Location" => "/miner/".$miner->getAddress()
         ]);
     }
 

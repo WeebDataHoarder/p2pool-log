@@ -80,11 +80,24 @@ class Utils {
         return strlen($v) >= strlen((string) $i) ? (string) $i : (preg_match("#^[0-9]+$#", $v) > 0 ? ".$v" : $v);
     }
 
+    static function encodeHexBinaryNumber(string $i): string {
+        $v = gmp_strval(gmp_init($i, 16), 62);
+
+        return strlen($v) >= strlen((string) $i) ? (string) $i : (preg_match("#^[0-9a-f]+$#", $v) > 0 ? ".$v" : $v);
+    }
+
     static function decodeBinaryNumber(string $i): int {
         if(preg_match("#^[0-9]+$#", $i) > 0){
             return (int) $i;
         }
         return gmp_intval(gmp_init(str_replace(".", "", $i), 62));
+    }
+
+    static function decodeHexBinaryNumber(string $i, int $bytes = 32): string {
+        if(preg_match("#^[0-9a-f]+$#", $i) > 0 and strlen($i) == ($bytes * 2)){
+            return $i;
+        }
+        return str_pad(gmp_strval(gmp_init(str_replace(".", "", $i), 62), 16), $bytes * 2, "0", STR_PAD_LEFT);
     }
 
     static function si_units($number, $decimals = 3): string {

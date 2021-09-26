@@ -35,6 +35,7 @@ class TwigExtraFunctions extends AbstractExtension{
             new TwigFilter('gmp_div', "gmp_div"),
             new TwigFilter('bcdiv', "bcdiv"),
             new TwigFilter('benc', [Utils::class, "encodeBinaryNumber"]),
+            new TwigFilter('henc', [Utils::class, "encodeHexBinaryNumber"]),
             new TwigFilter('time_elapsed_string', [Utils::class, "time_elapsed_string"]),
             new TwigFilter('time_elapsed_string_short', [Utils::class, "time_elapsed_string_short"]),
             new TwigFilter('si_units', [Utils::class, "si_units"]),
@@ -77,6 +78,24 @@ function render(string $template, array $context = [], int $code = 200, array $h
     }
 }
 
+function fetchReject($resolve){
+    return function ($e) use($resolve){
+        $resolve(render("error.html", [
+            "error" => [
+                "code" => 500,
+                "message" => "Internal Server Error",
+                "content" => "<pre>".htmlspecialchars($e->getMessage() . "\n\n" . $e->getTraceAsString(), ENT_HTML5)."</pre>",
+            ]
+        ]));
+    };
+}
+
+
+
+set_error_handler(function ($severity, $message, $filename, $lineno) {
+    throw new \ErrorException($message, 0, $severity, $filename, $lineno);
+});
+
 $client = new Browser();
 $server = new HttpServer(function (ServerRequestInterface $request){
 
@@ -107,9 +126,9 @@ $server = new HttpServer(function (ServerRequestInterface $request){
                             "shares" => $shares,
                             "pool" => $pool_info
                         ], 200, $headers));
-                    });
-                });
-            });
+                    }, fetchReject($resolve));
+                }, fetchReject($resolve));
+            }, fetchReject($resolve));
         });
     }
 
@@ -117,12 +136,49 @@ $server = new HttpServer(function (ServerRequestInterface $request){
         return render("api.html", [], 200, $headers);
     }
 
+    if(preg_match("#^/share/(?P<block>[0-9a-f]{64}|[0-9]+)$#", $request->getUri()->getPath(), $matches) > 0){
+        $identifier = $matches["block"];
+        $k = preg_match("#^[0-9a-f]{64}$#", $identifier) > 0 ? "id" : "height";
+        return new Promise(function ($resolve, $reject) use($k, $identifier, $headers) {
+            getFromAPI("pool_info", 5)->then(function ($pool_info) use ($k, $identifier, $resolve, $headers){
+                getFromAPI("block_by_$k/$identifier?coinbase")->then(function ($block) use ($pool_info, $k, $identifier, $resolve, $headers) {
+                    getFromAPI("block_by_$k/$identifier/raw")->then(function ($rawBlock) use ($resolve, $pool_info, $headers, $block) {
+                        $raw = null;
+                        try{
+                            $raw = BinaryBlock::fromHexDump($rawBlock);
+                        }catch (\Exception $e){
 
-    if($request->getUri()->getPath() === "/miner" and isset($params["address"])){
+                        }
+
+                        $resolve(render("share.html", [
+                            "pool" => $pool_info,
+                            "block" => $block,
+                            "raw" => $raw
+                        ], 200, $headers));
+                    }, function ($e) use ($resolve, $pool_info, $headers, $block){
+                        $resolve(render("share.html", [
+                            "pool" => $pool_info,
+                            "block" => $block,
+                            "raw" => null
+                        ], 200, $headers));
+                    });
+                }, function ($e) use ($resolve){
+                    $resolve(render("error.html", [
+                        "error" => [
+                            "code" => 404,
+                            "message" => "Block Not Found"
+                        ]
+                    ], 404));
+                });
+            }, fetchReject($resolve));
+        });
+    }
+
+    if(($request->getUri()->getPath() === "/miner" and isset($params["address"])) or preg_match("#^/miner/(?P<miner>[0-9]+|4[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+)$#", $request->getUri()->getPath(), $matches) > 0){
         if(isset($params["refresh"])){
             $headers["refresh"] = "300";
         }
-        $address = $params["address"];
+        $address = $params["address"] ?? $matches["miner"];
         return new Promise(function ($resolve, $reject) use($address, $headers){
             getFromAPI("miner_info/$address")->then(function ($miner) use ($resolve, $headers){
                 if($miner !== null and isset($miner->address)){
@@ -267,7 +323,7 @@ function getFromAPI(string $method, int $cacheTime = 0): PromiseInterface {
             if (count($response->getHeader("content-type")) > 0 and stripos($response->getHeader("content-type")[0], "/json") !== false) {
                 $result = json_decode($response->getBody()->getContents());
             } else {
-                $result = $response->getBody();
+                $result = $response->getBody()->getContents();
             }
 
             if($cacheTime > 0){

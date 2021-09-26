@@ -93,11 +93,11 @@
             <th title="{{ b.main.id }}"><a href="/b/{{ b.main.height|benc }}">{{ b.main.height }}</a></th>
             {% if b.parent.height is defined %}
                 <th title="{{ b.id }} is an uncle of height {{ b.parent.height }}, {{ b.parent.id }}">
-                    {{ b.height }}*
+                    <a href="/share/{{ b.id }}">{{ b.height }}*</a>
                 </th>
             {% else %}
                 <th title="{{ b.id }}">
-                    {{ b.height }}
+                    <a href="/share/{{ b.id }}">{{ b.height }}</a>
                 </th>
             {% endif %}
             <td title="{{ b.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ b.timestamp)|time_elapsed_string_short }}</td>
@@ -108,7 +108,7 @@
             {% else %}
                 <td>unknown</td>
             {% endif %}
-            <td title="{{ b.miner }}" class="mono small"><a href="/miner?address={{ b.miner }}">{{ b.miner|slice(0, 10) ~ "..." ~ b.miner|slice(-10) }}</a></td>
+            <td title="{{ b.miner }}" class="mono small"><a href="/miner/{{ b.miner }}">{{ b.miner|slice(0, 10) ~ "..." ~ b.miner|slice(-10) }}</a></td>
             <th class="small">{{ b.coinbase.reward|bcdiv("1000000000000", 12) }} XMR</th>
             <td>{{ b.coinbase.payouts|length }}</td>
             <td title="{{ b.coinbase.id }}" class="mono small"><a href="/c/{{ b.height|benc }}">{{ b.coinbase.id|slice(0, 10) ~ "..." ~ b.coinbase.id|slice(-10) }}</a></td>
@@ -133,11 +133,11 @@
         </tr>
         {% for s in shares %}
         <tr>
-            <th>{{ s.height }}</th>
-            <td class="mono smaller">{{ s.id|slice(0, 10) ~ "..." ~ s.id|slice(-10) }}</td>
+            <th><a href="/share/{{ s.id }}">{{ s.height }}</a></th>
+            <td class="mono smaller"><a href="/share/{{ s.id }}">{{ s.id|slice(0, 10) ~ "..." ~ s.id|slice(-10) }}</a></td>
             <td title="{{ s.main.id }}">{{ s.main.height }}</td>
             <td title="{{ s.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ s.timestamp)|time_elapsed_string_short }}</td>
-            <td title="{{ s.miner }}" class="mono small"><a href="/miner?address={{ s.miner }}">{{ s.miner|slice(0, 10) ~ "..." ~ s.miner|slice(-10) }}</a></td>
+            <td title="{{ s.miner }}" class="mono small"><a href="/miner/{{ s.miner }}">{{ s.miner|slice(0, 10) ~ "..." ~ s.miner|slice(-10) }}</a></td>
             <td>
                 {% if s.parent %}
                 {{ 100 - pool.sidechain.uncle_penalty }}% (uncle)
