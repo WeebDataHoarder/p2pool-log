@@ -115,6 +115,7 @@ do{
     $database->insertBlock($api->getShareFromRawEntry($disk_tip->getId())); // Update found status?
 
     for($h = $knownTip + 1; $api->blockExists($h); ++$h){
+        /** @var UncleBlock[] $uncles */
         $uncles = [];
         $disk_block = $api->getShareEntry($h, $uncles);
         if($disk_block === null){

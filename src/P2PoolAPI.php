@@ -49,6 +49,19 @@ class P2PoolAPI{
 
     /**
      * @param string $id
+     * @return Block|null
+     * @throws \Exception
+     */
+    public function getShareFromFailedRawEntry(string $id) : ?Block{
+        try{
+            return Block::fromBinaryBlock($this->db, BinaryBlock::fromHexDump($this->getFailedRawBlock($id)));
+        }catch (\Exception $e){
+            return null;
+        }
+    }
+
+    /**
+     * @param string $id
      * @param UncleBlock[] $uncles
      * @return Block|null
      * @throws \Exception

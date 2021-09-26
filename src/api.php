@@ -460,8 +460,22 @@ $server = new HttpServer(function (ServerRequestInterface $request){
 
         $id = $matches["block"];
         $b = $matches["by"] === "id" ? $api->getDatabase()->getBlockById($id) : $api->getDatabase()->getBlockByHeight((int) $id);
+
+        $isOrphan = false;
+        $isValid = true;
+
         if($b === null and $matches["by"] === "id"){
             $b = $api->getDatabase()->getUncleById($id);
+
+            if($b === null){
+                $b = $api->getShareFromRawEntry($id);
+                $isOrphan = true;
+
+                if($b === null){
+                    $isValid = false;
+                    $b = $api->getShareFromFailedRawEntry($id);
+                }
+            }
         }
 
         if($b === null){
@@ -475,6 +489,10 @@ $server = new HttpServer(function (ServerRequestInterface $request){
             case "/raw":
                 $raw = $api->getRawBlock($b->getId());
                 if($raw === null){
+                    $raw = $api->getFailedRawBlock($b->getId());
+                }
+
+                if($raw === null){
                     return new Response(404, [
                         "Content-Type" => "application/json; charset=utf-8"
                     ], json_encode(["error" => "not_found"]));
@@ -484,9 +502,16 @@ $server = new HttpServer(function (ServerRequestInterface $request){
                     "Content-Type" => "text/plain"
                 ], $raw);
             default:
+                $data = getBlockAsJSONData($api, $b, true, isset($params["coinbase"]));
+                if($isOrphan){
+                    $data["orphan"] = true;
+                }
+                if(!$isValid){
+                    $data["invalid"] = true;
+                }
                 return new Response(200, [
                     "Content-Type" => "application/json; charset=utf-8"
-                ], json_encode(getBlockAsJSONData($api, $b, true, isset($params["coinbase"])), JSON_UNESCAPED_SLASHES | ($isKnownBrowser ? JSON_PRETTY_PRINT : 0)));
+                ], json_encode($data, JSON_UNESCAPED_SLASHES | ($isKnownBrowser ? JSON_PRETTY_PRINT : 0)));
         }
     }
 
