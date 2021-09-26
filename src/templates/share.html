@@ -72,7 +72,9 @@
         </tr>
         <tr>
             <td>
-                {% if block.parent %}
+                {% if block.orphan is defined and block.orphan %}
+                0%
+                {% elseif block.parent %}
                 {{ 100 - pool.sidechain.uncle_penalty }}% (uncle)
                 {% else %}
                 100%
