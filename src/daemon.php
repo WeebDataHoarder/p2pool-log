@@ -91,7 +91,7 @@ if(iterator_to_array($database->query("SELECT COUNT(*) as count FROM coinbase_ou
 
 do{
     ++$runs;
-    $disk_tip = $api->getShareEntry($knownTip);
+    $disk_tip = $api->getShareFromRawEntry($api->getShareEntry($knownTip)->getId());
     $db_tip = $database->getBlockByHeight($knownTip);
 
     if($db_tip->getId() !== $disk_tip->getId()){ //Reorg has happened, delete old values
