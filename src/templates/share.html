@@ -13,14 +13,17 @@
     {% endif %}
     {% if block.invalid is defined and block.invalid %}
     <h1 style="color:#FF0000">This share is invalid</h1>
-    {% elseif block.orphan is defined and block.invalid %}
+    {% elseif block.orphan is defined and block.orphan %}
     <h1 style="color:#E0E000">This share has been orphaned</h1>
     {% endif %}
     <br/>
 
     <table class="center" style="max-width: calc(8em + 28em + 8em + 28em)">
         <tr>
-            {% if block.parent is defined %}
+            {% if block.orphan is defined and block.orphan %}
+            <td colspan="2"><a href="/share/{{ block.parent.id }}">&lt;&lt; Previous share</a></td>
+            <td colspan="2">Orphans do not have next blocks</td>
+            {% elseif block.parent is defined %}
             <td colspan="2"><a href="/share/{{ block.parent.id }}">&lt;&lt; Parent share</a></td>
             <td colspan="2">Uncles do not have next blocks</td>
             {% else %}
