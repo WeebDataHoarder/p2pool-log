@@ -91,10 +91,23 @@
             <td class="small">{{ block.coinbase.reward|bcdiv("1000000000000", 12) }} XMR</td>
             <td class="mono smaller">{{ block.coinbase.private_key }}</td>
         </tr>
+{% if raw is not null %}
+        <tr><td colspan="4">&nbsp;</td></tr>
+        <tr>
+            <th>Nonce</th>
+            <th>Cumulative Difficulty</th>
+            <th>Extra Nonce</th>
+            <th>Monero Miner Difficulty</th>
+        </tr>
+        <tr>
+            <td class="mono">{{ raw.getNonce() }}</td>
+            <td class="mono smaller">{{ raw.getCumulativeDifficulty() }}</td>
+            <td class="mono">{{ raw.getExtraNonce() }}</td>
+            <td class="mono smaller">{{ raw.getExtra().mainDifficulty }}</td>
+        </tr>
+
     </table>
 </div>
-
-{% if raw is not null %}
 <div class="center" style="text-align: center">
     {% if raw.getUncles()|length > 0 %}
     <h2>Uncle shares</h2>
@@ -145,6 +158,10 @@
     </ul>
     {% endif %}
 </div>
+{% else %}
+</table>
+</div>
+
 {% endif %}
 
 {% endblock %}
