@@ -111,7 +111,7 @@
         </tr>
         {% for s in last_shares %}
         <tr>
-            <th>{{ s.height }}</th>
+            <th><a href="/share/{{ s.id }}">{{ s.height }}</a></th>
             <td class="mono smaller"><a href="/share/{{ s.id }}">{{ s.id|slice(0, 10) ~ "..." ~ s.id|slice(-10) }}</a></td>
             <td title="{{ s.main.id }}">{{ s.main.height }}</td>
             <td title="{{ s.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ s.timestamp)|time_elapsed_string_short }}</td>
