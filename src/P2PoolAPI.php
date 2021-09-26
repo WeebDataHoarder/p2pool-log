@@ -3,6 +3,7 @@
 namespace p2pool;
 
 
+use MoneroIntegrations\MoneroPhp\Cryptonote;
 use p2pool\db\Block;
 use p2pool\db\Database;
 use p2pool\db\UncleBlock;
@@ -28,6 +29,10 @@ class P2PoolAPI{
         return $this->path . "/blocks/" . $id[0] . "/$id";
     }
 
+    private function getFailedRawBlockPath(string $id) : string{
+        return $this->path . "/failed_blocks/" . $id[0] . "/$id";
+    }
+
     public function blockExists(int $height) : bool{
         return file_exists($this->getBlockPath($height));
     }
@@ -40,6 +45,32 @@ class P2PoolAPI{
     public function getShareEntry(int $height, array &$uncles = []) : ?Block{
         $ob = json_decode(file_get_contents($this->getBlockPath($height)), false);
         return is_object($ob) ? Block::fromJSONObject($this->db, $ob, $uncles) : null;
+    }
+
+    /**
+     * @param string $id
+     * @param UncleBlock[] $uncles
+     * @return Block|null
+     * @throws \Exception
+     */
+    public function getShareFromRawEntry(string $id, array &$uncles = []) : ?Block{
+        try{
+            $raw = BinaryBlock::fromHexDump($this->getRawBlock($id));
+        }catch (\Exception $e){
+            return null;
+        }
+
+        $u = [];
+
+        foreach ($raw->getUncles() as $uncle){
+            try{
+                $u[] = BinaryBlock::fromHexDump($this->getRawBlock($uncle));
+            }catch (\Exception $e){
+                return null;
+            }
+        }
+
+        return Block::fromBinaryBlock($this->db, $raw, $u, $uncles);
     }
 
     /**
@@ -62,6 +93,10 @@ class P2PoolAPI{
 
     public function getRawBlock(string $id) : ?string{
         return file_exists($this->getRawBlockPath($id)) ? file_get_contents($this->getRawBlockPath($id)) : null;
+    }
+
+    public function getFailedRawBlock(string $id) : ?string{
+        return file_exists($this->getFailedRawBlockPath($id)) ? file_get_contents($this->getFailedRawBlockPath($id)) : null;
     }
 
     public function getDatabase() : Database {

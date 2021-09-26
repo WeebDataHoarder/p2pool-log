@@ -2,6 +2,9 @@
 
 namespace p2pool\db;
 
+use MoneroIntegrations\MoneroPhp\Cryptonote;
+use p2pool\BinaryBlock;
+
 class Block{
     private string $id;
     private int $height;
@@ -57,6 +60,64 @@ class Block{
         $this->main_found = $main_found;
         $this->miner_main_id = $miner_main_id;
         $this->miner_main_difficulty = $miner_main_difficulty;
+    }
+
+    /**
+     * @param Database $database
+     * @param BinaryBlock $b
+     * @param BinaryBlock[] $knownUncles
+     * @param array $uncles
+     * @return Block|null
+     * @throws \Exception
+     */
+    public static function fromBinaryBlock(Database $database, BinaryBlock $b, $knownUncles = [], array &$uncles = []) : Block{
+        $miner = $database->getOrCreateMinerByAddress($b->getPublicAddress());
+        if($miner === null){
+            throw new \Exception("Could not get or create miner");
+        }
+
+        $block = new Block(
+            $b->getId(), $b->getHeight(), $b->getParent(),
+            $b->getCoinbaseTxId(), $b->getCoinbaseTxReward(), $b->getCoinbaseTxPrivateKey(),
+            $b->getDifficulty(), $b->getTimestamp(), $miner->getId(),
+            $b->getExtra()->powHash ?? str_repeat("00", 32),
+            $b->getCoinbaseTxGenHeight(),
+            $b->getExtra()->mainId ?? str_repeat("00", 32),
+            false,
+            str_repeat("ff", 32),
+            $b->getExtra()->mainDifficulty ?? str_repeat("ff", 32)
+        );
+        $block->main_found = $block->isProofHigherThanDifficulty();
+        
+        foreach ($b->getUncles() as $u){
+            foreach ($knownUncles as $uncle){
+                if($u === $uncle->getId()){
+                    $uncle_block = new UncleBlock(
+                        $block->getId(), $block->getHeight(),
+                        $uncle->getId(), $uncle->getHeight(), $uncle->getParent(),
+                        $uncle->getCoinbaseTxId(), $uncle->getCoinbaseTxReward(), $uncle->getCoinbaseTxPrivateKey(),
+                        $uncle->getDifficulty(), $uncle->getTimestamp(), $miner->getId(),
+                        $uncle->getExtra()->powHash ?? str_repeat("00", 32),
+                        $uncle->getCoinbaseTxGenHeight(),
+                        $uncle->getExtra()->mainId ?? str_repeat("00", 32),
+                        false,
+                        str_repeat("ff", 32),
+                        $uncle->getExtra()->mainDifficulty ?? str_repeat("ff", 32)
+                    );
+                    $uncle_block->main_found = $uncle_block->isProofHigherThanDifficulty();
+                    $uncles[] = $uncle_block;
+                    break;
+                }
+            }
+        }
+
+        /*
+        if(count($uncles) !== count($b->getUncles())){
+            throw new \Exception("Could not find all uncles")
+        }
+        */
+
+        return $block;
     }
 
 

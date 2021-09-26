@@ -20,13 +20,14 @@ echo "PoW hash: ".($b->getExtra()->powHash ?? "none")."\n";
 echo "main diff: ".($b->getExtra()->mainDifficulty ?? "none")."\n";
 
 echo "\n\n=== MainChain data blob ===\n";
-$mIndex = 0;
 echo "majorVersion: ".$b->getMajorVersion()."\n";
 echo "minorVersion: ".$b->getMinorVersion()."\n";
 echo "timestamp: ".$b->getTimestamp()."\n";
 echo "Parent: ".$b->getMainParent()."\n";
 echo "Nonce: ".$b->getNonce()."\n";
 echo "ExtraNonce: ".$b->getExtraNonce()."\n";
+
+echo "TxId: ". $b->getCoinbaseTxId() . "\n";
 
 echo "TxVersion: ".$b->getCoinbaseTxVersion()."\n";
 echo "TxUnlock: ".$b->getCoinbaseTxUnlockTime()."\n";
@@ -50,7 +51,6 @@ foreach ($b->getTransactions() as $i => $tx){
 
 echo "\n\n=== SideChain data blob ===\n";
 
-$sIndex = 0;
 $publicSpendKey = $b->getPublicSpendKey();
 $publicViewKey = $b->getPublicViewKey();
 echo "Miner pSpend: $publicSpendKey\n";

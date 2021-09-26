@@ -2,6 +2,9 @@
 
 namespace p2pool;
 
+use MoneroIntegrations\MoneroPhp\Cryptonote;
+use MoneroIntegrations\MoneroPhp\SHA3;
+
 class BinaryBlock{
 
     private const HASH_SIZE = 32;
@@ -102,6 +105,17 @@ class BinaryBlock{
     }
 
     /**
+     * @return int
+     */
+    public function getCoinbaseTxReward(): int {
+        $total = 0;
+        foreach ($this->getCoinbaseTxOutputs() as $o){
+            $total += $o->reward;
+        }
+        return $total;
+    }
+
+    /**
      * @return string
      */
     public function getCoinbaseTxExtra(): string {
@@ -141,6 +155,18 @@ class BinaryBlock{
      */
     public function getCoinbaseTxPrivateKey(): string {
         return $this->coinbaseTxPrivateKey;
+    }
+
+    /**
+     * @return string
+     */
+    public function getCoinbaseTxId() : string {
+        return $this->coinbaseTxId;
+    }
+
+    public function getPublicAddress() : string {
+        $cn = new Cryptonote();
+        return $cn->encode_address($this->getPublicSpendKey(), $this->getPublicViewKey());
     }
 
     /**
@@ -200,6 +226,7 @@ class BinaryBlock{
     private string $publicSpendKey;
     private string $publicViewKey;
     private string $coinbaseTxPrivateKey;
+    private string $coinbaseTxId;
     private string $parent;
     private array $uncles = [];
     private int $height;
@@ -250,10 +277,11 @@ class BinaryBlock{
         $b->mainParent = bin2hex(self::readBinary($main, self::HASH_SIZE, $index));
         $b->nonce = bin2hex(self::readBinary($main, self::NONCE_SIZE, $index));
 
+        $txIndex = $index;
         $b->coinbaseTxVersion = self::readUINT8($main, $index);
         $b->coinbaseTxUnlockTime = self::readVARINT($main, $index);
         $b->coinbaseTxInputCount = self::readUINT8($main, $index);
-        $b->coinbaseTxInputType = self::readUINT8($main, $index);
+        $b->coinbaseTxInputType = self::readUINT8($main, $index); //TODO: EXPECT TXIN_GEN
         $b->coinbaseTxGenHeight = self::readVARINT($main, $index);
 
         $outputCount = self::readVARINT($main, $index);
@@ -270,7 +298,23 @@ class BinaryBlock{
 
         $txExtra = self::readBinary($main, self::readVARINT($main, $index), $index);
         $b->coinbaseTxExtra = bin2hex($txExtra);
-        $txExtraNULL = self::readUINT8($main, $index); //????
+
+        $txBytes = substr($main, $txIndex, $index - $txIndex);
+
+        $txExtraBaseRCT = self::readUINT8($main, $index);
+
+        //Tx Id calculation
+
+        $hashes = [
+            SHA3::init(SHA3::KECCAK_256)->absorb($txBytes)->squeeze(self::HASH_SIZE),
+
+            // Base RCT, single 0 byte in miner tx
+            SHA3::init(SHA3::KECCAK_256)->absorb(chr($txExtraBaseRCT))->squeeze(self::HASH_SIZE),
+            // Prunable RCT, empty in miner tx
+            str_repeat("\x00", self::HASH_SIZE)
+        ];
+
+        $b->coinbaseTxId = bin2hex(SHA3::init(SHA3::KECCAK_256)->absorb(implode($hashes))->squeeze(self::HASH_SIZE));
 
         $txCount = self::readVARINT($main, $index);
         for($i = 0; $i < $txCount; ++$i){
