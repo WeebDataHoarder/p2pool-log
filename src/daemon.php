@@ -22,6 +22,10 @@ $tip = $tip === null ? 1 : $tip->getHeight();
 
 echo "[CHAIN] Last known database tip is $tip\n";
 
+$diskTip = $api->getPoolStats()->height;
+
+echo "[CHAIN] Last known disk tip is $tip\n";
+
 //$top = Utils::findTopValue([$api, "blockExists"], $tip, SIDECHAIN_PPLNS_WINDOW);
 
 $startFrom = $isFresh ? Utils::findBottomValue([$api, "blockExists"], 1, SIDECHAIN_PPLNS_WINDOW) : $tip;
@@ -29,6 +33,8 @@ $startFrom = $isFresh ? Utils::findBottomValue([$api, "blockExists"], 1, SIDECHA
 if($isFresh){
     $uncles = [];
     $block = $api->getShareEntry($startFrom, $uncles);
+    $uncles = [];
+    $block = $api->getShareFromRawEntry($block->getId(), $uncles);
     $database->insertBlock($block);
     foreach ($uncles as $uncle){
         $database->insertUncleBlock($uncle);
@@ -106,11 +112,15 @@ do{
         continue;
     }
 
-    $database->insertBlock($disk_tip); // Update found status?
+    $database->insertBlock($api->getShareFromRawEntry($disk_tip->getId())); // Update found status?
 
     for($h = $knownTip + 1; $api->blockExists($h); ++$h){
         $uncles = [];
         $disk_block = $api->getShareEntry($h, $uncles);
+        if($disk_block === null){
+            break;
+        }
+        $disk_block = $api->getShareFromRawEntry($disk_block->getId());
         $prev_block = $database->getBlockByHeight($h - 1);
         if($disk_block->getPreviousId() !== $prev_block->getId()){
             echo "[CHAIN] Possible reorg occurred, aborting insertion at height $h: prev id ".$disk_block->getPreviousId()." != id ".$prev_block->getId()."\n";
