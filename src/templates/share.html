@@ -21,7 +21,7 @@
     <table class="center" style="max-width: calc(8em + 28em + 8em + 28em)">
         <tr>
             {% if block.orphan is defined and block.orphan %}
-            <td colspan="2"><a href="/share/{{ block.parent.id }}">&lt;&lt; Previous share</a></td>
+            <td colspan="2"><a href="/share/{{ block.previous_id }}">&lt;&lt; Previous share</a></td>
             <td colspan="2">Orphans do not have next blocks</td>
             {% elseif block.parent is defined %}
             <td colspan="2"><a href="/share/{{ block.parent.id }}">&lt;&lt; Parent share</a></td>
