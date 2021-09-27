@@ -258,6 +258,12 @@ class BinaryBlock{
 
                 $main = self::readBinary($bin, self::readUINT64($bin, $index), $index);
                 $side = self::readBinary($bin, self::readUINT64($bin, $index), $index);
+
+                try{
+                    $b->extra->peer = self::readBinary($bin, self::readUINT64($bin, $index), $index);
+                }catch (\Throwable $e){
+
+                }
                 break;
             case 0:
                 $main = self::readBinary($bin, self::readUINT64($bin, $index), $index);

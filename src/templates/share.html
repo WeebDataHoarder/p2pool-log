@@ -13,6 +13,9 @@
     {% endif %}
     {% if block.invalid is defined and block.invalid %}
     <h1 style="color:#FF0000">This share is invalid</h1>
+    {% if raw.getExtra().peer is defined %}
+    <h3>Share was received from peer <span class="mono">{{ raw.getExtra().peer }}</span></h3>
+    {% endif %}
     {% elseif block.orphan is defined and block.orphan %}
     <h1 style="color:#E0E000">This share has been orphaned</h1>
     {% endif %}
