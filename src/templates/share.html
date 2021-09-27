@@ -18,7 +18,7 @@
         {% endif %}
     {% elseif block.orphan is defined and block.orphan %}
     <h1 style="color:#E0E000">This share has been orphaned</h1>
-    {% elseif block.orphan is defined and block.orphan %}
+    {% elseif block.main.orphan is defined and block.main.orphan %}
     <h1 style="color:#E0E000">This share mined Monero block at height {{ block.main.height }}, but was orphaned</h1>
     {% endif %}
     <br/>
