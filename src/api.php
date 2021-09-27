@@ -102,6 +102,10 @@ function getBlockAsJSONData(P2PoolAPI $api, Block $b, $extraUncleData = false, $
 
     $data["weight"] = gmp_intval($weight);
 
+    if($b->isProofHigherThanDifficulty() and !$b->isMainFound()){
+        $data["main"]["orphan"] = true;
+    }
+
     return $data;
 }
 

@@ -13,11 +13,13 @@
     {% endif %}
     {% if block.invalid is defined and block.invalid %}
     <h1 style="color:#FF0000">This share is invalid</h1>
-    {% if raw.getExtra().peer is defined %}
+        {% if raw.getExtra().peer is defined %}
     <h3>Share was received from peer <span class="mono">{{ raw.getExtra().peer }}</span></h3>
-    {% endif %}
+        {% endif %}
     {% elseif block.orphan is defined and block.orphan %}
     <h1 style="color:#E0E000">This share has been orphaned</h1>
+    {% elseif block.orphan is defined and block.orphan %}
+    <h1 style="color:#E0E000">This share mined Monero block at height {{ block.main.height }}, but was orphaned</h1>
     {% endif %}
     <br/>
 
