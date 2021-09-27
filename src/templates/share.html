@@ -116,6 +116,9 @@
 <div class="center" style="text-align: center">
     {% if raw.getUncles()|length > 0 %}
     <h2>Uncle shares</h2>
+    {% if block.parent is defined %}
+    <p><strong>NOTE:</strong> Uncle shares do not have their listed uncles accounted for weight, the following list is just for reference.</p>
+    {% endif %}
     <ul class="mono">
         {% for u in raw.getUncles() %}
         <li><a href="/share/{{ u }}">{{ u }}</a></li>
