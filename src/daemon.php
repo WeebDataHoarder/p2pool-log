@@ -34,7 +34,7 @@ if($isFresh){
     $uncles = [];
     $block = $api->getShareEntry($startFrom, $uncles);
     $uncles = [];
-    $block = $api->getShareFromRawEntry($block->getId(), $uncles);
+    $block = $api->getShareFromRawEntry($block->getId(), $uncles) ?? $block;
     $database->insertBlock($block);
     foreach ($uncles as $uncle){
         $database->insertUncleBlock($uncle);
@@ -91,7 +91,8 @@ if(iterator_to_array($database->query("SELECT COUNT(*) as count FROM coinbase_ou
 
 do{
     ++$runs;
-    $disk_tip = $api->getShareFromRawEntry($api->getShareEntry($knownTip)->getId());
+    $disk_tip = $api->getShareEntry($knownTip);
+    $disk_tip = $api->getShareFromRawEntry($disk_tip->getId()) ?? $disk_tip;
     $db_tip = $database->getBlockByHeight($knownTip);
 
     if($db_tip->getId() !== $disk_tip->getId()){ //Reorg has happened, delete old values
@@ -112,8 +113,6 @@ do{
         continue;
     }
 
-    $database->insertBlock($api->getShareFromRawEntry($disk_tip->getId())); // Update found status?
-
     for($h = $knownTip + 1; $api->blockExists($h); ++$h){
         /** @var UncleBlock[] $uncles */
         $uncles = [];
@@ -121,7 +120,8 @@ do{
         if($disk_block === null){
             break;
         }
-        $disk_block = $api->getShareFromRawEntry($disk_block->getId());
+        $disk_block = $api->getShareFromRawEntry($disk_block->getId()) ?? $disk_block;
+
         $prev_block = $database->getBlockByHeight($h - 1);
         if($disk_block->getPreviousId() !== $prev_block->getId()){
             echo "[CHAIN] Possible reorg occurred, aborting insertion at height $h: prev id ".$disk_block->getPreviousId()." != id ".$prev_block->getId()."\n";
