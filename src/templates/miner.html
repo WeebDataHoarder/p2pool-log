@@ -8,7 +8,7 @@
     {% if refresh %}
     <a href="/miner/{{ miner.address }}">Autorefresh is ON ({{ refresh }} s)</a>
     {% else %}
-    <a href="/miner/{{ miner.address }}&refresh">Autorefresh is OFF</a>
+    <a href="/miner/{{ miner.address }}?refresh">Autorefresh is OFF</a>
     {% endif %}
 </div>
 
