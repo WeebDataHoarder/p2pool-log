@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<div style="text-align: center; font-weight: bold;">
+{% if refresh %}
+<a href="/">Autorefresh is ON ({{ refresh }} s)</a>
+{% else %}
+<a href="/?refresh">Autorefresh is OFF</a>
+{% endif %}
+</div>
+
+<div style="text-align: center">
+    <h2>Recent Monero blocks found by P2Pool miners</h2>
+    <table class="center datatable" style="max-width: calc(8em + 8em + 8em + 12em + 10em + 7em + 12em + 28em)">
+        <tr>
+            <th style="width: 8em;">Monero Height</th>
+            <th style="width: 8em;">P2Pool Height</th>
+            <th style="width: 8em;">Age <small>[h:m:s]</small></th>
+            <th style="width: 8em;">Effort</th>
+            <th style="width: 12em;" title="The P2Pool miner who found this block">Found by</th>
+            <th style="width: 10em;">Total Reward</th>
+            <th style="width: 7em;" title="Number of miners that got paid on the Coinbase Transaction">Outputs</th>
+            <th style="width: 12em;">Coinbase Transaction</th>
+            <th style="width: 28em;" title="You can use this Private Key to verify payouts sent by P2Pool on each block through the Coinbase Transaction">Coinbase Tx Private Key</th>
+        </tr>
+        {% for b in blocks_found %}
+        <tr>
+            <th title="{{ b.main.id }}"><a href="/b/{{ b.main.height|benc }}">{{ b.main.height }}</a></th>
+            {% if b.parent.height is defined %}
+                <th title="{{ b.id }} is an uncle of height {{ b.parent.height }}, {{ b.parent.id }}">
+                    <a href="/share/{{ b.id }}">{{ b.height }}*</a>
+                </th>
+            {% else %}
+                <th title="{{ b.id }}">
+                    <a href="/share/{{ b.id }}">{{ b.height }}</a>
+                </th>
+            {% endif %}
+            <td title="{{ b.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ b.timestamp)|time_elapsed_string_short }}</td>
+            {% if attribute(pool.sidechain.effort.last, b.main.id) is defined %}
+                <td style="font-weight:bolder; color: {{ attribute(pool.sidechain.effort.last, b.main.id)|effort_color }};">
+                    {{ attribute(pool.sidechain.effort.last, b.main.id)|round(2) }}%
+                </td>
+            {% else %}
+                <td>unknown</td>
+            {% endif %}
+            <td title="{{ b.miner }}" class="mono small"><a href="/miner/{{ b.miner }}">{{ b.miner|slice(0, 10) ~ "..." ~ b.miner|slice(-10) }}</a></td>
+            <th class="small">{{ b.coinbase.reward|bcdiv("1000000000000", 12) }} XMR</th>
+            <td>{{ b.coinbase.payouts|length }}</td>
+            <td title="{{ b.coinbase.id }}" class="mono small"><a href="/c/{{ b.height|benc }}">{{ b.coinbase.id|slice(0, 10) ~ "..." ~ b.coinbase.id|slice(-10) }}</a></td>
+            <td class="mono smaller">{{ b.coinbase.private_key }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}

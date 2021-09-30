@@ -136,6 +136,25 @@ $server = new HttpServer(function (ServerRequestInterface $request){
         return render("api.html", [], 200, $headers);
     }
 
+    if($request->getUri()->getPath() === "/blocks"){
+
+        if(isset($params["refresh"])){
+            $headers["refresh"] = "600";
+        }
+
+        return new Promise(function ($resolve, $reject) use($headers) {
+            getFromAPI("pool_info", 5)->then(function ($pool_info) use ($resolve, $headers) {
+                getFromAPI("found_blocks?coinbase&limit=100", 30)->then(function ($blocks) use ($resolve, $pool_info, $headers) {
+                    $resolve(render("blocks.html", [
+                        "refresh" => isset($headers["refresh"]) ? (int) $headers["refresh"] : false,
+                        "blocks_found" => $blocks, //TODO: load raw blocks to get their accumulated difficulty
+                        "pool" => $pool_info
+                    ], 200, $headers));
+                }, fetchReject($resolve));
+            }, fetchReject($resolve));
+        });
+    }
+
     if(preg_match("#^/share/(?P<block>[0-9a-f]{64}|[0-9]+)$#", $request->getUri()->getPath(), $matches) > 0){
         $identifier = $matches["block"];
         $k = preg_match("#^[0-9a-f]{64}$#", $identifier) > 0 ? "id" : "height";
