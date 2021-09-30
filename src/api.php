@@ -446,7 +446,19 @@ $server = new HttpServer(function (ServerRequestInterface $request){
         parse_str($request->getUri()->getQuery(), $params);
 
         $limit = isset($params["limit"]) ? (int) min(SIDECHAIN_PPLNS_WINDOW, $params["limit"]) : 50;
-        $miner = isset($params["miner"]) ? (int) $params["miner"] : 0;
+
+        $miner = 0;
+        if(isset($params["miner"])){
+            $miner = (strlen($params["miner"]) > 10 and $params["miner"][0] === "4") ? $api->getDatabase()->getMinerByAddress($params["miner"]) : null;
+            if($miner === null and preg_match("#^[0-9]+$#", $params["miner"]) > 0){
+                $miner = $api->getDatabase()->getMiner((int) $params["miner"]);
+            }
+            if($miner === null){
+                return new Response(404, [
+                    "Content-Type" => "application/json; charset=utf-8"
+                ], json_encode(["error" => "not_found"]));
+            }
+        }
 
         $ret = [];
 

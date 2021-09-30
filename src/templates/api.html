@@ -291,8 +291,8 @@ curl --silent https://p2pool.observer/api/found_blocks?limit=2
     <hr/>
 
     <div>
-        <h3 class="mono">/api/shares?limit=[limit]&miner=[minerId]</h3>
-        <p>Response contains last found share records on P2Pool. Optional parameters are <em>limit</em>, maximum amount of records to return, defaults to 50, max SIDECHAIN_PPLNS_WINDOW. Additionally, you can pass the <em>miner</em> to select shares from that miner only. <em>coinbase</em> parameter can also be used here to decode coinbase outputs</p>
+        <h3 class="mono">/api/shares?limit=[limit]&miner=[id|address]</h3>
+        <p>Response contains last found share records on P2Pool. Optional parameters are <em>limit</em>, maximum amount of records to return, defaults to 50, max SIDECHAIN_PPLNS_WINDOW. Additionally, you can pass the <em>miner</em> parameter to select shares from that miner only. <em>coinbase</em> parameter can also be used here to decode coinbase outputs</p>
         <pre class="smaller">
 curl --silent https://p2pool.observer/api/shares?limit=2
 [
