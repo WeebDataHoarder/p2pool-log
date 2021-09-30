@@ -447,7 +447,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
 
         $limit = isset($params["limit"]) ? (int) min(SIDECHAIN_PPLNS_WINDOW, $params["limit"]) : 50;
 
-        $miner = 0;
+        $minerId = 0;
         if(isset($params["miner"])){
             $miner = (strlen($params["miner"]) > 10 and $params["miner"][0] === "4") ? $api->getDatabase()->getMinerByAddress($params["miner"]) : null;
             if($miner === null and preg_match("#^[0-9]+$#", $params["miner"]) > 0){
@@ -458,11 +458,12 @@ $server = new HttpServer(function (ServerRequestInterface $request){
                     "Content-Type" => "application/json; charset=utf-8"
                 ], json_encode(["error" => "not_found"]));
             }
+            $minerId = $miner->getId();
         }
 
         $ret = [];
 
-        foreach ($api->getDatabase()->getShares($limit, $miner) as $b){
+        foreach ($api->getDatabase()->getShares($limit, $minerId) as $b){
             $ret[] = getBlockAsJSONData($api, $b, true, isset($params["coinbase"]));
         }
 
