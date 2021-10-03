@@ -358,7 +358,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
     }
 
     if(preg_match("#^/api/redirect/coinbase/(?P<height>[0-9]+|.?[0-9A-Za-z]+)$#", $request->getUri()->getPath(), $matches) > 0){
-        $b = iterator_to_array($this->getBlocksByQuery('WHERE height = $1 AND main_found = \'y\'', [Utils::decodeBinaryNumber($matches["height"])]))[0]);
+        $b = iterator_to_array($this->getBlocksByQuery('WHERE height = $1 AND main_found = \'y\'', [Utils::decodeBinaryNumber($matches["height"])]))[0];
         if($b === null){
             return new Response(404, [
                 "Content-Type" => "application/json; charset=utf-8"
