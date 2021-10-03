@@ -193,7 +193,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 $blocks = iterator_to_array($database->getBlocksByQuery('WHERE height > $1 ORDER BY height ASC', [$tip->getHeight() - (15 * 60) / SIDECHAIN_BLOCK_TIME]));
                 $timeDiff = end($blocks)->getTimestamp() - reset($blocks)->getTimestamp();
                 $expectedTime = count($blocks) * SIDECHAIN_BLOCK_TIME;
-                $adjustement = ($timeDiff / $expectedTime) * 1000000;
+                $adjustement = ($expectedTime / $timeDiff) * 1000000;
                 $adjusted_diff = gmp_div(gmp_mul($diff, (int) $adjustement), 1000000);
                 $short_hashrate = gmp_div($adjusted_diff, SIDECHAIN_BLOCK_TIME);
                 /*$cummDiff = gmp_init(0);
@@ -462,7 +462,7 @@ $checks = [
                 if(count($addr) === 2){
                     $miner = $database->getMinerByAddressBounds($addr[0], $addr[1]);
 
-                    if($miner !== null and ($xvb_raffle === null or $xvb_raffle !== $miner->getId())){
+                    if($miner !== null and $xvb_raffle !== $miner->getId()){
                         if($xvb_raffle === null){
                             $xvb_raffle = $miner->getId();
                             return;
