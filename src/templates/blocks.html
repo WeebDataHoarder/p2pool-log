@@ -50,7 +50,7 @@
             <td title="{{ b.miner }}" class="mono small"><a href="/miner/{{ b.miner }}">{{ b.miner|slice(0, 10) ~ "..." ~ b.miner|slice(-10) }}</a></td>
             <th class="small">{{ b.coinbase.reward|bcdiv("1000000000000", 12) }} XMR</th>
             <td>{{ b.coinbase.payouts|length }}</td>
-            <td title="{{ b.coinbase.id }}" class="mono small"><a href="/c/{{ b.height|benc }}">{{ b.coinbase.id|slice(0, 10) ~ "..." ~ b.coinbase.id|slice(-10) }}</a></td>
+            <td title="{{ b.coinbase.id }}" class="mono small"><a href="/t/{{ b.coinbase.id|henc }}">{{ b.coinbase.id|slice(0, 10) ~ "..." ~ b.coinbase.id|slice(-10) }}</a></td>
             <td class="mono smaller">{{ b.coinbase.private_key }}</td>
         </tr>
         {% endfor %}
