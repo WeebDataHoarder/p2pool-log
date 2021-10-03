@@ -358,7 +358,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
     }
 
     if(preg_match("#^/api/redirect/coinbase/(?P<height>[0-9]+|.?[0-9A-Za-z]+)$#", $request->getUri()->getPath(), $matches) > 0){
-        $b = iterator_to_array($this->getBlocksByQuery('WHERE height = $1 AND main_found = \'y\'', [Utils::decodeBinaryNumber($matches["height"])]))[0];
+        $b = iterator_to_array($api->getDatabase()->getBlocksByQuery('WHERE height = $1 AND main_found = \'y\'', [Utils::decodeBinaryNumber($matches["height"])]))[0];
         if($b === null){
             return new Response(404, [
                 "Content-Type" => "application/json; charset=utf-8"
@@ -366,6 +366,45 @@ $server = new HttpServer(function (ServerRequestInterface $request){
         }
         return new Response(302, [
             "Location" => "https://xmrchain.net/tx/".$b->getCoinbaseId()
+        ]);
+    }
+
+    if(preg_match("#^/api/redirect/share/(?P<height>[0-9]+|.?[0-9A-Za-z]+)$#", $request->getUri()->getPath(), $matches) > 0){
+        $c = Utils::decodeBinaryNumber($matches["height"]);
+        $b = null;
+        if(preg_match("/^[0-9]+$/", $matches["height"]) > 0){
+            $b = iterator_to_array($api->getDatabase()->getBlocksByQuery('WHERE height = $1 AND main_found = \'y\'', [$matches["height"]]))[0];
+            if($b === null){
+                $b = iterator_to_array($api->getDatabase()->getUncleBlocksByQuery('WHERE height = $1 AND main_found = \'y\'', [$matches["height"]]))[0];
+            }
+        }else{
+            $blockHeight = $c >> 16;
+            $blockIdStart = $c & 0xFFFF;
+
+            foreach ($api->getDatabase()->getBlocksByQuery('WHERE height = $1', [$blockHeight]) as $block){
+                if(hexdec(substr($block->getId(), 0, 4)) === $blockIdStart){
+                    $b = $block;
+                    break;
+                }
+            }
+
+            if($b === null){
+                foreach ($api->getDatabase()->getUncleBlocksByQuery('WHERE height = $1', [$blockHeight]) as $block){
+                    if(hexdec(substr($block->getId(), 0, 4)) === $blockIdStart){
+                        $b = $block;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if($b === null){
+            return new Response(404, [
+                "Content-Type" => "application/json; charset=utf-8"
+            ], json_encode(["error" => "not_found"]));
+        }
+        return new Response(302, [
+            "Location" => "/share/".$b->getId()
         ]);
     }
 

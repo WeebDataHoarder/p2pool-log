@@ -217,7 +217,8 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
 
                 $effort .= round($current_effort, 2) . "%" . FORMAT_RESET;
 
-                sendIRCMessage("Last block found at height " . FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET . " ".Utils::time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://p2pool.observer/s/" . $block->getHeight() . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners" . FORMAT_RESET . " paid for ".FORMAT_COLOR_ORANGE . FORMAT_BOLD . bcdiv((string) $block->getCoinbaseReward(), "1000000000000", 12) . " XMR".FORMAT_RESET." :: Current effort $effort :: Pool height ". $tip->getHeight() ." :: Pool hashrate ".Utils::si_units(gmp_intval($hashrate))."H/s (short-term ".Utils::si_units(gmp_intval($short_hashrate), 1)."H/s) :: Global hashrate ".Utils::si_units(gmp_intval($global_hashrate))."H/s", $answer);
+                $uHeight = ($block->getHeight() << 16) | hexdec(substr($block->getId(), 0, 4));
+                sendIRCMessage("Last block found at height " . FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET . " ".Utils::time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://p2pool.observer/s/" . Utils::encodeBinaryNumber($uHeight) . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners" . FORMAT_RESET . " paid for ".FORMAT_COLOR_ORANGE . FORMAT_BOLD . bcdiv((string) $block->getCoinbaseReward(), "1000000000000", 12) . " XMR".FORMAT_RESET." :: Current effort $effort :: Pool height ". $tip->getHeight() ." :: Pool hashrate ".Utils::si_units(gmp_intval($hashrate))."H/s (short-term ".Utils::si_units(gmp_intval($short_hashrate), 1)."H/s) :: Global hashrate ".Utils::si_units(gmp_intval($global_hashrate))."H/s", $answer);
             },
         ],
         [
