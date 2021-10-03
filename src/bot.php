@@ -265,7 +265,8 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
 
                         $i = ($block->getHeight() << (int) ceil(log(SIDECHAIN_PPLNS_WINDOW * 4, 2))) | $index;
 
-                        sendIRCMessage("Your last payout was ". FORMAT_COLOR_ORANGE . FORMAT_BOLD . $total . " XMR".FORMAT_RESET." on block ". FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET ." ".Utils::time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://p2pool.observer/s/".$block->getHeight()." :: Verify payout https://p2pool.observer/p/".Utils::encodeBinaryNumber($i), $answer);
+                        $uHeight = ($block->getHeight() << 16) | hexdec(substr($block->getId(), 0, 4));
+                        sendIRCMessage("Your last payout was ". FORMAT_COLOR_ORANGE . FORMAT_BOLD . $total . " XMR".FORMAT_RESET." on block ". FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET ." ".Utils::time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://p2pool.observer/s/".Utils::encodeBinaryNumber($uHeight)." :: Verify payout https://p2pool.observer/p/".Utils::encodeBinaryNumber($i), $answer);
                         return;
                     }
                 }
@@ -370,7 +371,8 @@ function blockFoundMessage(Block $b){
     global $api;
     $payouts = $api->getWindowPayouts();
 
-    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "BLOCK FOUND:" . FORMAT_RESET . " height " . FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " :: Pool height ". $b->getHeight() ." :: https://p2pool.observer/s/" . $b->getHeight() . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners paid" . FORMAT_RESET . " :: Id " . FORMAT_ITALIC . $b->getMainId(), BOT_BLOCKS_FOUND_CHANNEL, true);
+    $uHeight = ($b->getHeight() << 16) | hexdec(substr($b->getId(), 0, 4));
+    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "BLOCK FOUND:" . FORMAT_RESET . " height " . FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " :: Pool height ". $b->getHeight() ." :: https://p2pool.observer/s/" . Utils::encodeBinaryNumber($uHeight) . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners paid" . FORMAT_RESET . " :: Id " . FORMAT_ITALIC . $b->getMainId(), BOT_BLOCKS_FOUND_CHANNEL, true);
     sendIRCMessage("Paid ".FORMAT_COLOR_ORANGE . FORMAT_BOLD . bcdiv((string) $b->getCoinbaseReward(), "1000000000000", 12) . " XMR".FORMAT_RESET." :: Verify payouts using Tx private key " . FORMAT_ITALIC . $b->getCoinbasePrivkey() . FORMAT_RESET . " :: Payout transaction for block ". FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " https://p2pool.observer/c/".Utils::encodeBinaryNumber($b->getHeight())."", BOT_BLOCKS_FOUND_CHANNEL, true);
     sleep(1);
 }
