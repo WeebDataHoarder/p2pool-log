@@ -135,6 +135,41 @@ class Utils {
         return $s;
     }
 
+    static function time_diff_string(float $interval, bool $full = true): string {
+        $now = new \DateTime;
+        $int = (int) ($interval);
+        $f = (int) (($interval - $int) * 1000000);
+        $diff = $now->diff((clone $now)->sub(\DateInterval::createFromDateString("$int seconds, $f microseconds")));
+
+
+        $diff->w = floor($diff->d / 7);
+        $diff->d -= $diff->w * 7;
+
+        $string = array(
+            'y' => 'y',
+            'm' => 'M',
+            'w' => 'w',
+            'd' => 'd',
+            'h' => 'h',
+            'i' => 'm',
+            's' => 's'
+        );
+        foreach ($string as $k => &$v) {
+            if ($diff->$k) {
+                $v = $diff->$k . $v;
+            } else {
+                unset($string[$k]);
+            }
+        }
+
+        if(count($string) === 0 or (count($string) === 1 and isset($string["s"]))){
+            $string["f"] = round($diff->f * 1000) . "ms";
+        }
+
+        if (!$full) $string = array_slice($string, 0, 1);
+        return $string ? implode(' ', $string) : "0";
+    }
+
     static function time_elapsed_string($datetime, bool $full = false): string {
         $now = new \DateTime;
         $ago = new \DateTime($datetime);

@@ -37,6 +37,7 @@ class TwigExtraFunctions extends AbstractExtension{
             new TwigFilter('benc', [Utils::class, "encodeBinaryNumber"]),
             new TwigFilter('henc', [Utils::class, "encodeHexBinaryNumber"]),
             new TwigFilter('time_elapsed_string', [Utils::class, "time_elapsed_string"]),
+            new TwigFilter('time_diff_string', [Utils::class, "time_diff_string"]),
             new TwigFilter('time_elapsed_string_short', [Utils::class, "time_elapsed_string_short"]),
             new TwigFilter('si_units', [Utils::class, "si_units"]),
             new TwigFilter('effort_color', function ($effort){
@@ -134,6 +135,27 @@ $server = new HttpServer(function (ServerRequestInterface $request){
 
     if($request->getUri()->getPath() === "/api"){
         return render("api.html", [], 200, $headers);
+    }
+
+    if($request->getUri()->getPath() === "/calculate-share-time"){
+
+        return new Promise(function ($resolve, $reject) use($headers, $params) {
+            getFromAPI("pool_info", 5)->then(function ($pool_info) use ($resolve, $headers, $params) {
+                $hashrate = 0;
+                $magnitude = 1000;
+                if(isset($params["hashrate"])){
+                    $hashrate = (float) $params["hashrate"];
+                }
+                if(isset($params["magnitude"])){
+                    $magnitude = (int) $params["magnitude"];
+                }
+                $resolve(render("calculate-share-time.html", [
+                    "pool" => $pool_info,
+                    "hashrate" => $hashrate,
+                    "magnitude" => $magnitude
+                ], 200, $headers));
+            });
+        });
     }
 
     if($request->getUri()->getPath() === "/blocks"){

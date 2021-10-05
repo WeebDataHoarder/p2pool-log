@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %} - Average Share Time Calculator{% endblock %}
+
+{% block content %}
+
+<div style="text-align: center">
+    <form action="/calculate-share-time" method="get">
+        <h2>Average Share Time Calculator</h2>
+        <p>
+            This tool calculates your average expected time between shares on the pool at current difficulty.
+            <br/>
+            <small>Do note this time will vary (can get shares sooner, or later, even way later), depending on your luck, and changing difficulty of the pool due to increase / reductions in hashrate.</small>
+            <br/>
+            For low hashrate, this average is what statistically will be achieved low term.
+        </p>
+        <div>
+            <label for="hashrate">Your Hashrate</label><br/>
+            <input type="numeric" name="hashrate" id="hashrate" placeholder="100" size="8" class="mono" value="{% if hashrate > 0 %}{{ hashrate }}{% endif %}"/>
+            <select name="magnitude">
+                <option value="1"{% if magnitude == 1 %} selected{% endif %}>H/s</option>
+                <option value="1000"{% if magnitude == 1000 %} selected{% endif %}>KH/s</option>
+                <option value="1000000"{% if magnitude == 1000000 %} selected{% endif %}>MH/s</option>
+                <option value="1000000000"{% if magnitude == 1000000000 %} selected{% endif %}>GH/s</option>
+            </select>
+        </div>
+        <div style="margin-top: 10px">
+            <input type="submit" value="Calculate" style="width: 20em;"/>
+        </div>
+    </form>
+</div>
+
+
+
+{% if hashrate > 0 %}
+<hr/>
+<div style="text-align: center">
+    Pool difficulty: {{ pool.sidechain.difficulty|gmp_init(16)|gmp_intval|si_units(2) }}<br/>
+    Pool hashrate: {{ pool.sidechain.difficulty|gmp_init(16)|gmp_div(pool.sidechain.block_time)|gmp_intval|si_units(2) }}H/s<br/>
+    Your hashrate: {{ (hashrate * magnitude)|si_units(2) }}H/s<br/>
+    {% set between = (pool.sidechain.difficulty|gmp_init(16)|gmp_intval / (hashrate * magnitude)) %}
+    <strong>Average time between shares: {{ between|time_diff_string(true) }}</strong>
+</div>
+{% endif %}
+
+
+{% endblock %}
