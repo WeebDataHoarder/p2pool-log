@@ -89,7 +89,7 @@
             <th title="{{ p.id }}"><a href="/share/{{ p.id }}">{{ p.height }}</a></th>
             <td title="{{ p.timestamp|date('d-m-Y H:i:s \\U\\T\\C', timezone='UTC') }}">{{ ("@" ~ p.timestamp)|time_elapsed_string_short }}</td>
             <td class="small">{{ p.coinbase.reward|bcdiv("1000000000000", 12) }} XMR</td>
-            <td title="{{ p.coinbase.id }}" class="mono small"><a href="/c/{{ p.height|benc }}">{{ p.coinbase.id|slice(0, 10) ~ "..." ~ p.coinbase.id|slice(-10) }}</a></td>
+            <td title="{{ p.coinbase.id }}" class="mono small"><a href="/t/{{ p.coinbase.id|henc }}">{{ p.coinbase.id|slice(0, 10) ~ "..." ~ p.coinbase.id|slice(-10) }}</a></td>
             <td class="mono smaller" title="{{ p.coinbase.private_key }}">{{ p.coinbase.private_key|slice(0, 10) ~ "..." ~ p.coinbase.private_key|slice(-10) }} <a href="/p/{{ p.height|benc }}/{{ miner.id|benc }}" title="Prove you have a matching output for your address on this transaction">[[prove]]</a></td>
         </tr>
         {% endfor %}
