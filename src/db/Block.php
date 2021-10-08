@@ -84,7 +84,7 @@ class Block{
             $b->getCoinbaseTxGenHeight(),
             $b->getExtra()->mainId ?? str_repeat("00", 32),
             false,
-            str_repeat("ff", 32),
+            $b->getMainParent(),
             $b->getExtra()->mainDifficulty ?? str_repeat("ff", 32)
         );
         $block->main_found = $block->isProofHigherThanDifficulty();
@@ -101,7 +101,7 @@ class Block{
                         $uncle->getCoinbaseTxGenHeight(),
                         $uncle->getExtra()->mainId ?? str_repeat("00", 32),
                         false,
-                        str_repeat("ff", 32),
+                        $uncle->getMainParent(),
                         $uncle->getExtra()->mainDifficulty ?? str_repeat("ff", 32)
                     );
                     $uncle_block->main_found = $uncle_block->isProofHigherThanDifficulty();
