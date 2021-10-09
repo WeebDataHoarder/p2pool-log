@@ -41,10 +41,10 @@ class MoneroCoinbaseTransactionOutputs{
         return $this->outputs;
     }
 
-    public static function fromTransactionId($txId): ?MoneroCoinbaseTransactionOutputs {
-        if(isset(static::$cache[$txId])){
+    public static function fromTransactionId($txId, $fromCache = true): ?MoneroCoinbaseTransactionOutputs {
+        if($fromCache and isset(static::$cache[$txId])){
             return static::$cache[$txId];
-        }else if (file_exists($path = "/cache/tx_{$txId}.json")){
+        }else if ($fromCache and file_exists($path = "/cache/tx_{$txId}.json")){
             $outputs = json_decode(file_get_contents($path));
             $o = new MoneroCoinbaseTransactionOutputs();
             $o->outputs = $outputs;

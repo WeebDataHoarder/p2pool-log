@@ -272,7 +272,7 @@ class Database{
     /**
      * @param int $limit
      * @param int|null $minerId
-     * @return \Iterator
+     * @return \Iterator|Block[]
      */
     public function getShares(int $limit = 50, int $minerId = 0) : \Iterator {
         $blocks = $this->getBlocksByQuery(($minerId !== 0 ? "WHERE miner = $2 " : "") . "ORDER BY height DESC, timestamp DESC LIMIT $1", $minerId !== 0  ? [$limit, $minerId] : [$limit]);
@@ -310,7 +310,7 @@ class Database{
 
     /**
      * @param int|null $limit
-     * @return \Iterator
+     * @return \Iterator|Block[]
      */
     public function getAllFound(int $limit = null) : \Iterator {
         $blocks = $this->getFound($limit);
