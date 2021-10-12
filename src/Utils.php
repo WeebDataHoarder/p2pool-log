@@ -3,7 +3,7 @@
 namespace p2pool;
 
 class Utils {
-    static function findBottomValue(callable $exists, $start = 1, $stride = 100){
+    static function findBottomValue(callable $exists, int $start = 1, $stride = 100){
         $index = $start;
 
         while(!$exists($index)){ //Find starting value

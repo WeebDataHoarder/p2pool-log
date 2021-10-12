@@ -22,15 +22,21 @@ $tip = $tip === null ? 1 : $tip->getHeight();
 
 echo "[CHAIN] Last known database tip is $tip\n";
 
-$diskTip = $api->getPoolStats()->height;
+$diskTip = $api->getPoolStats()->pool_statistics->height;
 
-echo "[CHAIN] Last known disk tip is $tip\n";
+echo "[CHAIN] Last known disk tip is $diskTip\n";
 
 //$top = Utils::findTopValue([$api, "blockExists"], $tip, SIDECHAIN_PPLNS_WINDOW);
 
-$startFrom = $isFresh ? Utils::findBottomValue([$api, "blockExists"], 1, SIDECHAIN_PPLNS_WINDOW) : $tip;
+$startFrom = $tip;
 
-if($isFresh){
+if($diskTip > $tip and !$api->blockExists($tip + 1)){
+    for($i = $diskTip; $api->blockExists($i); --$i){
+        $startFrom = $i;
+    }
+}
+
+if($isFresh or $startFrom != $tip){
     $uncles = [];
     $block = $api->getShareEntry($startFrom, $uncles);
     $uncles = [];
