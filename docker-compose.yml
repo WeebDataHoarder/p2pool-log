@@ -25,14 +25,13 @@ services:
       - p2pool-log
   site:
     image: nginx:mainline
+    build:
+      context: ./docker/nginx
+      dockerfile: Dockerfile
+      args:
+        - TOR_SERVICE_ADDRESS=${TOR_SERVICE_ADDRESS}
+        - NET_SERVICE_ADDRESS=${NET_SERVICE_ADDRESS}
     restart: always
-    volumes:
-      - ./static:/web:ro
-      - ./docker/nginx/snippets/cors.conf:/etc/nginx/snippets/cors.conf:ro
-      - ./docker/nginx/snippets/csp.conf:/etc/nginx/snippets/csp.conf:ro
-      - ./docker/nginx/snippets/security-headers.conf:/etc/nginx/snippets/security-headers.conf:ro
-      - ./docker/nginx/snippets/onion-headers.conf:/etc/nginx/snippets/onion-headers.conf:ro
-      - ./docker/nginx/site.conf:/etc/nginx/conf.d/site.conf:ro
     depends_on:
       - api
       - web
@@ -74,6 +73,8 @@ services:
     restart: always
     environment:
       - MONEROD_RPC_URL=${MONEROD_RPC_URL}
+      - TOR_SERVICE_ADDRESS=${TOR_SERVICE_ADDRESS}
+      - NET_SERVICE_ADDRESS=${NET_SERVICE_ADDRESS}
     depends_on:
       - api
     read_only: true
@@ -121,6 +122,8 @@ services:
       - BOT_COMMANDS_CHANNEL=${BOT_COMMANDS_CHANNEL}
       - BOT_BLOCKS_FOUND_CHANNEL=${BOT_BLOCKS_FOUND_CHANNEL}
       - MONEROD_RPC_URL=${MONEROD_RPC_URL}
+      - TOR_SERVICE_ADDRESS=${TOR_SERVICE_ADDRESS}
+      - NET_SERVICE_ADDRESS=${NET_SERVICE_ADDRESS}
     depends_on:
       - db
       - tor

@@ -14,7 +14,7 @@ require_once __DIR__ . "/constants.php";
 $api = new P2PoolAPI(new Database($argv[1]), "/api");
 $database = $api->getDatabase();
 
-foreach (["IRC_SERVER_HOST", "IRC_SERVER_PORT", "IRC_SERVER_PASS", "BOT_BLOCKS_FOUND_CHANNEL", "BOT_COMMANDS_CHANNEL", "BOT_NICK", "BOT_USER", "BOT_PASSWORD",] as $c) {
+foreach (["IRC_SERVER_HOST", "IRC_SERVER_PORT", "IRC_SERVER_PASS", "BOT_BLOCKS_FOUND_CHANNEL", "BOT_COMMANDS_CHANNEL", "BOT_NICK", "BOT_USER", "BOT_PASSWORD", "TOR_SERVICE_ADDRESS", "NET_SERVICE_ADDRESS"] as $c) {
     define($c, getenv($c));
 }
 
@@ -139,7 +139,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 $database->addSubscription($sub);
                 sendIRCMessage("Subscribed your nick to shares found by " . FORMAT_ITALIC . shortenAddress($maddress->getAddress()) . ". You can private message this bot for any commands instead of using public channels.", $answer);
 
-                sendIRCMessage("Your miner statistics https://p2pool.observer/m/" . Utils::encodeBinaryNumber($miner->getId()), $answer, true);
+                sendIRCMessage("Your miner statistics https://".NET_SERVICE_ADDRESS."/m/" . Utils::encodeBinaryNumber($miner->getId()), $answer, true);
                 $payouts = $api->getWindowPayouts();
 
                 $myReward = (($payouts[$miner->getId()] ?? 0) / array_sum($payouts));
@@ -218,7 +218,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 $effort .= round($current_effort, 2) . "%" . FORMAT_RESET;
 
                 $uHeight = ($block->getHeight() << 16) | hexdec(substr($block->getId(), 0, 4));
-                sendIRCMessage("Last block found at height " . FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET . " ".Utils::time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://p2pool.observer/s/" . Utils::encodeBinaryNumber($uHeight) . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners" . FORMAT_RESET . " paid for ".FORMAT_COLOR_ORANGE . FORMAT_BOLD . bcdiv((string) $block->getCoinbaseReward(), "1000000000000", 12) . " XMR".FORMAT_RESET." :: Current effort $effort :: Pool height ". $tip->getHeight() ." :: Pool hashrate ".Utils::si_units(gmp_intval($hashrate))."H/s (short-term ".Utils::si_units(gmp_intval($short_hashrate), 1)."H/s) :: Global hashrate ".Utils::si_units(gmp_intval($global_hashrate))."H/s", $answer);
+                sendIRCMessage("Last block found at height " . FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET . " ".Utils::time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://".NET_SERVICE_ADDRESS."/s/" . Utils::encodeBinaryNumber($uHeight) . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners" . FORMAT_RESET . " paid for ".FORMAT_COLOR_ORANGE . FORMAT_BOLD . bcdiv((string) $block->getCoinbaseReward(), "1000000000000", 12) . " XMR".FORMAT_RESET." :: Current effort $effort :: Pool height ". $tip->getHeight() ." :: Pool hashrate ".Utils::si_units(gmp_intval($hashrate))."H/s (short-term ".Utils::si_units(gmp_intval($short_hashrate), 1)."H/s) :: Global hashrate ".Utils::si_units(gmp_intval($global_hashrate))."H/s", $answer);
             },
         ],
         [
@@ -266,7 +266,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                         $i = ($block->getHeight() << (int) ceil(log(SIDECHAIN_PPLNS_WINDOW * 4, 2))) | $index;
 
                         $uHeight = ($block->getHeight() << 16) | hexdec(substr($block->getId(), 0, 4));
-                        sendIRCMessage("Your last payout was ". FORMAT_COLOR_ORANGE . FORMAT_BOLD . $total . " XMR".FORMAT_RESET." on block ". FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET ." ".Utils::time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://p2pool.observer/s/".Utils::encodeBinaryNumber($uHeight)." :: Verify payout https://p2pool.observer/p/".Utils::encodeBinaryNumber($i), $answer);
+                        sendIRCMessage("Your last payout was ". FORMAT_COLOR_ORANGE . FORMAT_BOLD . $total . " XMR".FORMAT_RESET." on block ". FORMAT_COLOR_RED . $block->getMainHeight() . FORMAT_RESET ." ".Utils::time_elapsed_string("@" . $block->getTimestamp()).", ".date("Y-m-d H:i:s", $block->getTimestamp())." UTC :: https://".NET_SERVICE_ADDRESS."/s/".Utils::encodeBinaryNumber($uHeight)." :: Verify payout https://".NET_SERVICE_ADDRESS."/p/".Utils::encodeBinaryNumber($i), $answer);
                         return;
                     }
                 }
@@ -325,7 +325,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 reset($miners);
                 $minerId = key($miners);
 
-                $m = "Your shares $share_count (+$uncle_count uncles) ~$myReward% " . Utils::si_units($myHashrate) . "H/s :: Statistics https://p2pool.observer/m/" . Utils::encodeBinaryNumber($minerId);
+                $m = "Your shares $share_count (+$uncle_count uncles) ~$myReward% " . Utils::si_units($myHashrate) . "H/s :: Statistics https://".NET_SERVICE_ADDRESS."/m/" . Utils::encodeBinaryNumber($minerId);
 
                 if($share_count > 0){
                     $m .= " :: Shares position [";
@@ -372,8 +372,8 @@ function blockFoundMessage(Block $b){
     $payouts = $api->getWindowPayouts();
 
     $uHeight = ($b->getHeight() << 16) | hexdec(substr($b->getId(), 0, 4));
-    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "BLOCK FOUND:" . FORMAT_RESET . " height " . FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " :: Pool height ". $b->getHeight() ." :: https://p2pool.observer/s/" . Utils::encodeBinaryNumber($uHeight) . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners paid" . FORMAT_RESET . " :: Id " . FORMAT_ITALIC . $b->getMainId(), BOT_BLOCKS_FOUND_CHANNEL, true);
-    sendIRCMessage("Paid ".FORMAT_COLOR_ORANGE . FORMAT_BOLD . bcdiv((string) $b->getCoinbaseReward(), "1000000000000", 12) . " XMR".FORMAT_RESET." :: Verify payouts using Tx private key " . FORMAT_ITALIC . $b->getCoinbasePrivkey() . FORMAT_RESET . " :: Payout transaction for block ". FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " https://p2pool.observer/c/".Utils::encodeBinaryNumber($b->getHeight())."", BOT_BLOCKS_FOUND_CHANNEL, true);
+    sendIRCMessage(FORMAT_COLOR_LIGHT_GREEN . FORMAT_BOLD . "BLOCK FOUND:" . FORMAT_RESET . " height " . FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " :: Pool height ". $b->getHeight() ." :: https://".NET_SERVICE_ADDRESS."/s/" . Utils::encodeBinaryNumber($uHeight) . " :: ".FORMAT_COLOR_ORANGE . count($payouts)." miners paid" . FORMAT_RESET . " :: Id " . FORMAT_ITALIC . $b->getMainId(), BOT_BLOCKS_FOUND_CHANNEL, true);
+    sendIRCMessage("Paid ".FORMAT_COLOR_ORANGE . FORMAT_BOLD . bcdiv((string) $b->getCoinbaseReward(), "1000000000000", 12) . " XMR".FORMAT_RESET." :: Verify payouts using Tx private key " . FORMAT_ITALIC . $b->getCoinbasePrivkey() . FORMAT_RESET . " :: Payout transaction for block ". FORMAT_COLOR_RED . $b->getMainHeight() . FORMAT_RESET . " https://".NET_SERVICE_ADDRESS."/c/".Utils::encodeBinaryNumber($b->getHeight())."", BOT_BLOCKS_FOUND_CHANNEL, true);
     sleep(1);
 }
 

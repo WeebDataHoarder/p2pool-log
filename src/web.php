@@ -18,6 +18,7 @@ use Twig\Environment;
 use Twig\Extension\AbstractExtension;
 use Twig\Loader\FilesystemLoader;
 use Twig\TwigFilter;
+use Twig\TwigFunction;
 
 
 $loader = new FilesystemLoader(__DIR__ . "/templates");
@@ -49,6 +50,11 @@ class TwigExtraFunctions extends AbstractExtension{
                     return "#FF0000";
                 }
             })
+        ];
+    }
+    public function getFunctions(): array {
+        return [
+            new TwigFunction('getenv', 'getenv'),
         ];
     }
 }

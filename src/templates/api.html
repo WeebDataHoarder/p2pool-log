@@ -32,7 +32,7 @@ pre {
         <p>Response contains general information on the current status of the P2Pool sidechain and Monero network, and other parameters.</p>
         <p><em>.sidechain.effort.last</em> keys are Monero block id effort for last found blocks.</p>
         <pre class="smaller">
-curl --silent https://p2pool.observer/api/pool_info
+curl --silent https://{{ getenv('NET_SERVICE_ADDRESS') }}/api/pool_info
 {
     "sidechain": {
         "id": "3a62dbe4f836cb6eb22ce851f8c5b7e19fecd364fad9da20f7c2f7c8eceb3430",
@@ -123,7 +123,7 @@ curl --silent https://p2pool.observer/api/pool_info
         <h3 class="mono">/api/miner_info/&lt;id|address&gt;</h3>
         <p>Response contains general information on a specific miner, referred by its internal <em>id</em> or known Monero <em>address</em>.</p>
         <pre class="smaller">
-curl --silent https://p2pool.observer/api/miner_info/1
+curl --silent https://{{ getenv('NET_SERVICE_ADDRESS') }}/api/miner_info/1
 {
     "id": 1,
     "address": "4B6tWMyFe3aNyxqvbYF9wNfsrPmaTGv149qi39m49wRSYUxch7CNRtjULeam11z14pS8UYYgmtkdJb71Y6frosYf8z9BkKV",
@@ -146,7 +146,7 @@ curl --silent https://p2pool.observer/api/miner_info/1
         <p>For each share, <em>weight</em> denotes how much is worth difficulty wise.</p>
         <pre class="smaller">
 [result has been cut due to size, relevant portions shown]
-curl --silent https://p2pool.observer/api/shares_in_range_window/1
+curl --silent https://{{ getenv('NET_SERVICE_ADDRESS') }}/api/shares_in_range_window/1
 [
     {
         "id": "41763b42dfb35fde8cc756c3f9304219833196710339d48a243e4ee99f1b4533",
@@ -189,7 +189,7 @@ curl --silent https://p2pool.observer/api/shares_in_range_window/1
         <p><em>.[].coinbase.private_key</em> can be used to prove the payout is correct.</p>
         <pre class="smaller">
 [result has been cut due to size, relevant portions shown]
-curl --silent https://p2pool.observer/api/payouts/1
+curl --silent https://{{ getenv('NET_SERVICE_ADDRESS') }}/api/payouts/1
 [
     {
         "id": "8114a983629e6d64083dc193fed0b9eda05e4369f78c4be851617a1cf0f2649a",
@@ -231,7 +231,7 @@ curl --silent https://p2pool.observer/api/payouts/1
         <h3 class="mono">/api/found_blocks?limit=[limit][&coinbase]</h3>
         <p>Response contains last found block records on the Monero network by P2Pool. Optional parameters are <em>limit</em>, maximum amount of records to return, defaults to 50, max 100. Additionally, you can pass the <em>coinbase</em> parameter to receive decoded coinbase outputs.</p>
         <pre class="smaller">
-curl --silent https://p2pool.observer/api/found_blocks?limit=2
+curl --silent https://{{ getenv('NET_SERVICE_ADDRESS') }}/api/found_blocks?limit=2
 [
     {
         "id": "6b54f8a82a34e50b9be6d467200cbcf84e2bc4a2239276bb6e2997188c7a53bc",
@@ -294,7 +294,7 @@ curl --silent https://p2pool.observer/api/found_blocks?limit=2
         <h3 class="mono">/api/shares?limit=[limit]&miner=[id|address]</h3>
         <p>Response contains last found share records on P2Pool. Optional parameters are <em>limit</em>, maximum amount of records to return, defaults to 50, max SIDECHAIN_PPLNS_WINDOW. Additionally, you can pass the <em>miner</em> parameter to select shares from that miner only. <em>coinbase</em> parameter can also be used here to decode coinbase outputs</p>
         <pre class="smaller">
-curl --silent https://p2pool.observer/api/shares?limit=2
+curl --silent https://{{ getenv('NET_SERVICE_ADDRESS') }}/api/shares?limit=2
 [
     {
         "id": "eec1d58aeee6e22177eb119c044897d96f69d293b5b875ed054a7ef0bd132d7c",
@@ -357,7 +357,7 @@ curl --silent https://p2pool.observer/api/shares?limit=2
         <h3 class="mono">/api/block_by_id/&lt;blockId&gt;[/raw]</h3>
         <p>Response contains a block/share record on P2Pool by Id. You can select the JSON version or the binary hex format (various format versions exist, decoding is documented by source code). <em>coinbase</em> parameter can also be used here to decode coinbase outputs</p>
         <pre class="smaller">
-curl --silent https://p2pool.observer/api/block_by_id/bc827aeecb5a5254cec6c2fc9a07f49c1d3c03b92dea39c5d9b3fbb19affe0ef
+curl --silent https://{{ getenv('NET_SERVICE_ADDRESS') }}/api/block_by_id/bc827aeecb5a5254cec6c2fc9a07f49c1d3c03b92dea39c5d9b3fbb19affe0ef
 {
     "id": "bc827aeecb5a5254cec6c2fc9a07f49c1d3c03b92dea39c5d9b3fbb19affe0ef",
     "height": 158450,
@@ -394,7 +394,7 @@ curl --silent https://p2pool.observer/api/block_by_id/bc827aeecb5a5254cec6c2fc9a
         <h3 class="mono">/api/block_by_height/&lt;blockHeight&gt;[/raw]</h3>
         <p>Response contains a block/share record on P2Pool by height. You can select the JSON version or the binary hex format (various format versions exist, decoding is documented by source code). <em>coinbase</em> parameter can also be used here to decode coinbase outputs</p>
         <pre class="smaller">
-curl --silent https://p2pool.observer/api/block_by_height/158450
+curl --silent https://{{ getenv('NET_SERVICE_ADDRESS') }}/api/block_by_height/158450
 {
     "id": "bc827aeecb5a5254cec6c2fc9a07f49c1d3c03b92dea39c5d9b3fbb19affe0ef",
     "height": 158450,
