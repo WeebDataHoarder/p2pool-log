@@ -42,9 +42,10 @@ class MoneroCoinbaseTransactionOutputs{
     }
 
     public static function fromTransactionId($txId, $fromCache = true): ?MoneroCoinbaseTransactionOutputs {
+        $path = "/cache/tx_{$txId}.json";
         if($fromCache and isset(static::$cache[$txId])){
             return static::$cache[$txId];
-        }else if ($fromCache and file_exists($path = "/cache/tx_{$txId}.json")){
+        }else if ($fromCache and file_exists($path)){
             $outputs = json_decode(file_get_contents($path));
             $o = new MoneroCoinbaseTransactionOutputs();
             $o->outputs = $outputs;
