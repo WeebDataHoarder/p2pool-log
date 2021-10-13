@@ -151,6 +151,9 @@ class Database{
     public function setBlockFound(string $id, bool $found = true) {
         pg_query_params($this->db, "UPDATE blocks SET main_found = $2 WHERE id = $1;", [$id, $found ? 'y' : 'n']);
         pg_query_params($this->db, "UPDATE uncles SET main_found = $2 WHERE id = $1;", [$id, $found ? 'y' : 'n']);
+        if(!$found){
+            pg_query_params($this->db, "DELETE FROM coinbase_outputs WHERE id = (SELECT coinbase_id FROM blocks WHERE id = $1) OR id = (SELECT coinbase_id FROM uncles WHERE id = $1);", [$id]);
+        }
     }
 
     /**
