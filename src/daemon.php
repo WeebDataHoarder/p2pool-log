@@ -142,7 +142,12 @@ do{
 
                 if($uncle->isMainFound()){
                     echo "[CHAIN] BLOCK FOUND! (uncle) Main height " . $uncle->getMainHeight() . ", main id " . $uncle->getMainId() . "\n";
-                    $tx = MoneroCoinbaseTransactionOutputs::fromTransactionId($uncle->getCoinbaseId());
+                    $tx = null;
+                    try{
+                        $tx = MoneroCoinbaseTransactionOutputs::fromBinaryBlock(BinaryBlock::fromHexDump($api->getRawBlock($uncle->getId())));
+                    }catch (\Throwable $e){
+                        return null;
+                    }
                     if($tx !== null){
                         processFoundBlockWithTransaction($uncle, $tx);
                     }
@@ -152,7 +157,12 @@ do{
         }
         if($disk_block->isMainFound()){
             echo "[CHAIN] BLOCK FOUND! Main height " . $disk_block->getMainHeight() . ", main id " . $disk_block->getMainId() . "\n";
-            $tx = MoneroCoinbaseTransactionOutputs::fromTransactionId($disk_block->getCoinbaseId());
+            $tx = null;
+            try{
+                $tx = MoneroCoinbaseTransactionOutputs::fromBinaryBlock(BinaryBlock::fromHexDump($api->getRawBlock($disk_block->getId())));
+            }catch (\Throwable $e){
+                return null;
+            }
             if($tx !== null){
                 processFoundBlockWithTransaction($disk_block, $tx);
             }

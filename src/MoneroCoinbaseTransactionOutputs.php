@@ -76,4 +76,25 @@ class MoneroCoinbaseTransactionOutputs{
 
         return null;
     }
+
+    public static function fromBinaryBlock(BinaryBlock $block): ?MoneroCoinbaseTransactionOutputs {
+        $outputs = [];
+        foreach ($block->getCoinbaseTxOutputs() as $output){
+            $outputs[$output->index] = (object) [
+                "index" => $output->index,
+                "key" => $output->ephemeralPublicKey,
+                "amount" => $output->reward
+            ];
+        }
+
+        if(count($outputs) > 0){
+            $o = new MoneroCoinbaseTransactionOutputs();
+            $o->outputs = $outputs;
+            $txId = $block->getCoinbaseTxId();
+            $path = "/cache/tx_{$txId}.json";
+            file_put_contents($path, json_encode($o->outputs));
+            return static::$cache[$txId] = $o;
+        }
+        return null;
+    }
 }
