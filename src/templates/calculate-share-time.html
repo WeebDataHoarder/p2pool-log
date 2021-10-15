@@ -40,8 +40,8 @@
     Your hashrate: {{ (hashrate * magnitude)|si_units(2) }}H/s<br/><br/>
     {% set between = (pool.sidechain.difficulty|gmp_init(16)|gmp_intval / (hashrate * magnitude)) %}
     {% set between_main = (pool.mainchain.difficulty|gmp_init(16)|gmp_intval / (hashrate * magnitude)) %}
-    <strong>Average time between P2Pool shares: {{ between|time_diff_string(true) }}</strong><br/><br/>
-    <em>Average time if Solo Mining (no P2Pool): {{ between_main|time_diff_string(true) }}</em><br/>
+    <strong>Average frequency between P2Pool shares: {{ between|time_diff_string(true) }}</strong><br/><br/>
+    <em>Average frequency between Solo Blocks (without P2Pool): {{ between_main|time_diff_string(true) }}</em><br/>
 </div>
 {% endif %}
 
