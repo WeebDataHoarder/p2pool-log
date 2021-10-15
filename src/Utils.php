@@ -198,4 +198,44 @@ class Utils {
         if (!$full) $string = array_slice($string, 0, 1);
         return $string ? implode(' ', $string) . ' ago' : 'just now';
     }
+
+    static function fnv1a_hash(string $str) : int{
+        $hash = 0xcbf29ce4842223 << 8 | 0x25; //Fix float conversion
+
+        for($i = 0; $i < strlen($str); ++$i){
+            $hash = self::bitwise_multiply(ord($str[$i]) ^ $hash, 0x100000001b3);
+        }
+
+        return $hash;
+    }
+
+    static function uint64_hi(int $i) : int{
+        return $i >> 32;
+    }
+
+    static function uint64_lo(int $i) : int{
+        return ((1 << 32) - 1) & $i;
+    }
+
+    static function bitwise_multiply(int $a, int $b, &$carry = null) : int{
+
+        $x = self::uint64_lo($a) * self::uint64_lo($b);
+        $s0 = self::uint64_lo($x);
+
+        $x = self::uint64_hi($a) * self::uint64_lo($b) + self::uint64_hi($x);
+        $s1 = self::uint64_lo($x);
+        $s2 = self::uint64_hi($x);
+
+
+        $x = $s1 + self::uint64_lo($a) * self::uint64_hi($b);
+        $s1 = self::uint64_lo($x);
+
+        $x = $s2 + self::uint64_hi($a) * self::uint64_hi($b) + self::uint64_hi($x);
+        $s2 = self::uint64_lo($x);
+        $s3 = self::uint64_hi($x);
+
+        $carry = ($s3 << 32) | $s2;
+
+        return ($s1 << 32) | $s0;
+    }
 }
