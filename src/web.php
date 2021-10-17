@@ -254,8 +254,9 @@ $server = new HttpServer(function (ServerRequestInterface $request){
                                             $uncles_found[min($index, $count - 1)]++;
                                             if($s->height > $wend){
                                                 $uncles_in_window++;
-                                                $long_diff = gmp_add($long_diff, $s->weight);
+                                                $window_diff = gmp_add($window_diff, $s->weight);
                                             }
+                                            $long_diff = gmp_add($long_diff, $s->weight);
                                         }else{
                                             $index = intdiv($tip - $s->height, intdiv($wsize + $count - 1, $count));
                                             $blocks_found[min($index, $count - 1)]++;
