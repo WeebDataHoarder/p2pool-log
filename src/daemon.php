@@ -79,7 +79,7 @@ function processFoundBlockWithTransaction(Block $b, MoneroCoinbaseTransactionOut
         return $api->getDatabase()->insertCoinbaseTransaction($coinbaseOutput);
     }else{
 
-        echo "[OUTPUT] Could not find all outputs! Coinbase transaction " . $b->getCoinbaseId() . "\n";
+        echo "[OUTPUT] Could not find all outputs! Coinbase transaction " . $b->getCoinbaseId() . ", got ".count($outputs).", expected ".count($miners).", real ".count($tx->getRawOutputs())."\n";
     }
 
     return false;
