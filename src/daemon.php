@@ -40,7 +40,12 @@ if($isFresh or $startFrom != $tip){
     $uncles = [];
     $block = $api->getShareEntry($startFrom, $uncles);
     $uncles = [];
-    $block = $api->getShareFromRawEntry($block->getId(), $uncles) ?? $block;
+    $id = $block->getId();
+    $block = $api->getShareFromRawEntry($block->getId(), $uncles, true);
+    if($block === null){
+        echo "[CHAIN] Could not find block $id to insert at height $startFrom. Check disk or uncles\n";
+        exit(1);
+    }
     $database->insertBlock($block);
     foreach ($uncles as $uncle){
         $database->insertUncleBlock($uncle);
