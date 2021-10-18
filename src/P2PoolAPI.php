@@ -79,13 +79,11 @@ class P2PoolAPI{
             try{
                 $u[] = BinaryBlock::fromHexDump($this->getRawBlock($uncle));
             }catch (\Throwable $e){
-                if($throwOnMissingUncle){
-                    return null;
-                }
+
             }
         }
 
-        return Block::fromBinaryBlock($this->db, $raw, $u, $uncles);
+        return Block::fromBinaryBlock($this->db, $raw, $u, $uncles, $throwOnMissingUncle);
     }
 
     /**

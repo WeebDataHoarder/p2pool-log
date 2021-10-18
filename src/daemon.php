@@ -158,7 +158,7 @@ do{
                     try{
                         $tx = MoneroCoinbaseTransactionOutputs::fromBinaryBlock(BinaryBlock::fromHexDump($api->getRawBlock($uncle->getId())));
                     }catch (\Throwable $e){
-                        return null;
+
                     }
                     if($tx !== null){
                         processFoundBlockWithTransaction($uncle, $tx);
@@ -173,7 +173,7 @@ do{
             try{
                 $tx = MoneroCoinbaseTransactionOutputs::fromBinaryBlock(BinaryBlock::fromHexDump($api->getRawBlock($disk_block->getId())));
             }catch (\Throwable $e){
-                return null;
+
             }
             if($tx !== null){
                 processFoundBlockWithTransaction($disk_block, $tx);

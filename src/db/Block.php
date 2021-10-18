@@ -70,7 +70,7 @@ class Block{
      * @return Block|null
      * @throws \Exception
      */
-    public static function fromBinaryBlock(Database $database, BinaryBlock $b, array $knownUncles = [], array &$uncles = []) : Block{
+    public static function fromBinaryBlock(Database $database, BinaryBlock $b, array $knownUncles = [], array &$uncles = [], bool $throwOnUncles = false) : Block{
         $miner = $database->getOrCreateMinerByAddress($b->getPublicAddress());
         if($miner === null){
             throw new \Exception("Could not get or create miner");
@@ -92,11 +92,15 @@ class Block{
         foreach ($b->getUncles() as $u){
             foreach ($knownUncles as $uncle){
                 if($u === $uncle->getId()){
+                    $uncle_miner = $database->getOrCreateMinerByAddress($uncle->getPublicAddress());
+                    if($uncle_miner === null){
+                        throw new \Exception("Could not get or create miner");
+                    }
                     $uncle_block = new UncleBlock(
                         $block->getId(), $block->getHeight(),
                         $uncle->getId(), $uncle->getHeight(), $uncle->getParent(),
                         $uncle->getCoinbaseTxId(), $uncle->getCoinbaseTxReward(), $uncle->getCoinbaseTxPrivateKey(),
-                        $uncle->getDifficulty(), $uncle->getTimestamp(), $miner->getId(),
+                        $uncle->getDifficulty(), $uncle->getTimestamp(), $uncle_miner->getId(),
                         $uncle->getExtra()->powHash ?? str_repeat("00", 32),
                         $uncle->getCoinbaseTxGenHeight(),
                         $uncle->getExtra()->mainId ?? str_repeat("00", 32),
@@ -111,11 +115,11 @@ class Block{
             }
         }
 
-        /*
-        if(count($uncles) !== count($b->getUncles())){
-            throw new \Exception("Could not find all uncles")
+
+        if($throwOnUncles and count($uncles) !== count($b->getUncles())){
+            throw new \Exception("Could not find all uncles");
         }
-        */
+
 
         return $block;
     }
