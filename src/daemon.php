@@ -171,10 +171,10 @@ do{
 
     if($runs % 10 === 0){ //Every 10 seconds or so
         foreach ($database->getAllFound(10) as $foundBlock){
-            //Scan last 6 found blocks and set status accordingly if found/not found
+            //Scan last 10 found blocks and set status accordingly if found/not found
 
             // Look between +1 block and +4 blocks
-            if(($disk_tip->getMainHeight() - 1) > $foundBlock->getMainHeight() and ($disk_tip->getMainHeight() - 5) < $foundBlock->getMainHeight()){
+            if(($disk_tip->getMainHeight() - 1) > $foundBlock->getMainHeight() and ($disk_tip->getMainHeight() - 5) < $foundBlock->getMainHeight() or $database->getCoinbaseTransaction($foundBlock) === null){
                 $tx = MoneroCoinbaseTransactionOutputs::fromTransactionId($foundBlock->getCoinbaseId(), false);
                 if($tx === null){ // If more than two minutes have passed before we get utxo, remove from found
                     echo "[CHAIN] Block that was found at main height " . $foundBlock->getMainHeight() . ", cannot find output, marking not found\n";
