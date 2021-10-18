@@ -126,8 +126,14 @@ do{
         if($disk_block === null){
             break;
         }
+        $id = $disk_block->getId();
+
         $uncles = [];
-        $disk_block = $api->getShareFromRawEntry($disk_block->getId(), $uncles, true) ?? $disk_block;
+        $disk_block = $api->getShareFromRawEntry($disk_block->getId(), $uncles, true);
+        if($disk_block === null){
+            echo "[CHAIN] Could not find block $id to insert at height $h. Check disk or uncles\n";
+            break;
+        }
 
         $prev_block = $database->getBlockByHeight($h - 1);
         if($disk_block->getPreviousId() !== $prev_block->getId()){
