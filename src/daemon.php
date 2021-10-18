@@ -126,7 +126,8 @@ do{
         if($disk_block === null){
             break;
         }
-        $disk_block = $api->getShareFromRawEntry($disk_block->getId()) ?? $disk_block;
+        $uncles = [];
+        $disk_block = $api->getShareFromRawEntry($disk_block->getId(), $uncles, true) ?? $disk_block;
 
         $prev_block = $database->getBlockByHeight($h - 1);
         if($disk_block->getPreviousId() !== $prev_block->getId()){

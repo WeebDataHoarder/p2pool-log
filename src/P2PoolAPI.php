@@ -66,7 +66,7 @@ class P2PoolAPI{
      * @return Block|null
      * @throws \Exception
      */
-    public function getShareFromRawEntry(string $id, array &$uncles = []) : ?Block{
+    public function getShareFromRawEntry(string $id, array &$uncles = [], bool $throwOnMissingUncle = false) : ?Block{
         try{
             $raw = BinaryBlock::fromHexDump($this->getRawBlock($id));
         }catch (\Throwable $e){
@@ -79,7 +79,9 @@ class P2PoolAPI{
             try{
                 $u[] = BinaryBlock::fromHexDump($this->getRawBlock($uncle));
             }catch (\Throwable $e){
-
+                if($throwOnMissingUncle){
+                    return null;
+                }
             }
         }
 
