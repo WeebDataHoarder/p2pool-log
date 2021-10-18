@@ -116,6 +116,61 @@ class P2PoolAPI{
         return $this->db;
     }
 
+    public function getBlockWindowPayouts(Block $tip): array {
+        $shares = [];
+
+        $block_count = 0;
+
+        $block = $tip;
+
+        do{
+            if (!isset($shares[$block->getMiner()])) {
+                $shares[$block->getMiner()] = 0;
+            }
+            $shares[$block->getMiner()] = gmp_add($shares[$block->getMiner()], gmp_init($block->getDifficulty(), 16));
+
+            foreach ($this->db->getUnclesByParentId($block->getId()) as $uncle) {
+                if (($tip->getHeight() - $uncle->getHeight()) >= SIDECHAIN_PPLNS_WINDOW) {
+                    continue;
+                }
+                if (!isset($shares[$uncle->getMiner()])) {
+                    $shares[$uncle->getMiner()] = 0;
+                }
+
+                $uncle_diff = gmp_init($uncle->getDifficulty(), 16);
+                $product = gmp_mul($uncle_diff, SIDECHAIN_UNCLE_PENALTY);
+                list($uncle_penalty, $rem) = gmp_div_qr($product, 100);
+
+                $shares[$block->getMiner()] = gmp_add($shares[$block->getMiner()], $uncle_penalty);
+                $shares[$uncle->getMiner()] = gmp_add($shares[$uncle->getMiner()], gmp_sub($uncle_diff, $uncle_penalty));
+            }
+            ++$block_count;
+
+            $block = $this->db->getBlockById($block->getPreviousId());
+        }while($block !== null and $block_count < SIDECHAIN_PPLNS_WINDOW);
+
+        $totalReward = $tip->getCoinbaseReward();
+
+        if($totalReward > 0){
+            $total_weight = gmp_init(0);
+            foreach ($shares as $r){
+                $total_weight = gmp_add($total_weight, $r);
+            }
+            $w = gmp_init(0);
+            $reward_given = gmp_init(0);
+            foreach ($shares as $i => $weight){
+                $w = gmp_add($w, $weight);
+
+                $a = gmp_mul($w, $totalReward);
+                list($next_value, $rem) = gmp_div_qr($a, $total_weight);
+                $shares[$i] = gmp_sub($next_value, $reward_given);
+                $reward_given = $next_value;
+            }
+        }
+
+        return $block_count !== SIDECHAIN_PPLNS_WINDOW ? [] : array_map("gmp_intval", $shares);
+    }
+
     public function getWindowPayouts(int $startBlock = null, int $totalReward = null): array {
         $shares = [];
 

@@ -55,7 +55,7 @@ function getBlockAsJSONData(P2PoolAPI $api, Block $b, $extraUncleData = false, $
                 ];
             }
         }else{
-            $payouts = $api->getWindowPayouts($b->getHeight(), $b->getCoinbaseReward() === 0 ? null : $b->getCoinbaseReward());
+            $payouts = $api->getBlockWindowPayouts($b);
             foreach ($payouts as $minerId => $amount){
                 $data["coinbase"]["payouts"][$api->getDatabase()->getMiner($minerId)] = [
                     "amount" => $amount

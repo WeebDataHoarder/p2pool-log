@@ -66,7 +66,7 @@ function processFoundBlockWithTransaction(Block $b, MoneroCoinbaseTransactionOut
     }
     echo "[OUTPUT] Trying to insert transaction " . $b->getCoinbaseId() . "\n";
 
-    $payout_hint = $api->getWindowPayouts($b->getHeight(), $b->getCoinbaseReward());
+    $payout_hint = $api->getBlockWindowPayouts($b);
     /** @var Miner[] $miners */
     $miners = [];
     foreach ($payout_hint as $minerId => $amount){

@@ -16,11 +16,14 @@ class MoneroCoinbaseTransactionOutputs{
      */
     public function matchOutputs(array $miners, string $tx_privkey): array {
         $matched = [];
+        $outputs = $this->outputs;
+        ksort($miners);
         foreach ($miners as $ix => $miner){
             $ma = $miner->getMoneroAddress();
             foreach ($this->outputs as $i => $o){
                 if($ma->getEphemeralPublicKey($tx_privkey, $o->index) === $o->key){
                     $matched[$miner->getId()] = clone $o;
+                    unset($outputs[$i]);
                     break;
                 }
             }
