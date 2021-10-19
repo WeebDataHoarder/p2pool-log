@@ -110,7 +110,7 @@
             <th style="width: 12em;">Valuation</th>
         </tr>
         {% for s in last_shares %}
-        <tr>
+        <tr{% if s.main.found %} class="hl-found"{% endif %}>
             <th><a href="/share/{{ s.id }}">{{ s.height }}</a></th>
             <td class="mono smaller"><a href="/share/{{ s.id }}">{{ s.id|slice(0, 10) ~ "..." ~ s.id|slice(-10) }}</a></td>
             <td title="{{ s.main.id }}">{{ s.main.height }}</td>
