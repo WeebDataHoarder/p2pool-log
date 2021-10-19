@@ -63,6 +63,22 @@ class Utils {
         return $max + $baseIndex;
     }
 
+    static function moneroJSONRPC(string $method, array $params){
+        $ch = curl_init(getenv("MONEROD_RPC_URL") . "json_rpc");
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            "Content-Type: application/json"
+        ]);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+            "jsonrpc" => "2.0",
+            "id" => "0",
+            "method" => $method,
+            "params" => $params
+        ]));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+        return @json_decode(curl_exec($ch));
+    }
+
     static function moneroRPC(string $method, array $params){
         $ch = curl_init(getenv("MONEROD_RPC_URL") . $method);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
@@ -72,6 +88,31 @@ class Utils {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
         return @json_decode(curl_exec($ch));
+    }
+
+    static function monero_GetBlockTemplate() : ?\stdClass{
+        $ret = Utils::moneroJSONRPC("get_block_header_by_height", [
+            "wallet_address" => "44GBHzv6ZyQdJkjqZje6KLZ3xSyN1hBSFAnLP6EAqJtCRVzMzZmeXTC2AHKDS9aEDTRKmo6a6o9r9j86pYfhCWDkKjbtcns",
+            "reserve_size" => 60
+        ]);
+
+        if(isset($ret->result->prev_hash)){
+            return $ret->result;
+        }
+
+        return null;
+    }
+
+    static function monero_GetBlockHeaderByHeight(int $height) : ?\stdClass{
+        $ret = Utils::moneroJSONRPC("get_block_header_by_height", [
+            "height" => $height
+        ]);
+
+        if(isset($ret->result->block_header->hash)){
+            return $ret->result->block_header;
+        }
+
+        return null;
     }
 
     static function encodeBinaryNumber(int $i): string {

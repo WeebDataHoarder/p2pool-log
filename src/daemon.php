@@ -100,6 +100,74 @@ if(iterator_to_array($database->query("SELECT COUNT(*) as count FROM coinbase_ou
     }
 }
 
+$difficultyCache = [];
+
+function cacheHeightDiff(int $height){
+    global $difficultyCache;
+    if(!isset($difficultyCache[$height])){
+        $header = Utils::monero_GetBlockHeaderByHeight($height);
+        if($header === null){
+            $template = Utils::monero_GetBlockTemplate();
+            if($template !== null){
+                $difficultyCache[$template->height] = str_pad(gmp_strval(gmp_init($template->difficulty), 16), 32, "0", STR_PAD_LEFT);
+            }
+        }else{
+            $difficultyCache[$header->height] = str_pad(gmp_strval(gmp_init($header->difficulty), 16), 32, "0", STR_PAD_LEFT);
+        }
+
+        if(count($difficultyCache) > 1024){
+            array_shift($difficultyCache);
+        }
+    }
+}
+
+foreach ($database->getBlocksByQuery("WHERE miner_main_difficulty = 'ffffffffffffffffffffffffffffffff' ORDER BY main_height ASC") as $b){ //Fix blocks without height
+    cacheHeightDiff($b->getMainHeight());
+    if(isset($difficultyCache[$b->getMainHeight()])){
+        echo "[CHAIN] Filling main difficulty for share " . $b->getHeight() . ", main height " . $b->getMainHeight() . "\n";
+        $diff = $difficultyCache[$b->getMainHeight()];
+        $database->setBlockMainDifficulty($b->getId(), $diff);
+        $b = $database->getBlockById($b->getId());
+
+        if(!$b->isMainFound() and $b->isProofHigherThanDifficulty()){
+            echo "[CHAIN] BLOCK FOUND! Main height " . $b->getMainHeight() . ", main id " . $b->getMainId() . "\n";
+            $tx = null;
+            try{
+                $tx = MoneroCoinbaseTransactionOutputs::fromTransactionId($b->getCoinbaseId());
+            }catch (\Throwable $e){
+
+            }
+            if($tx !== null){
+                $database->setBlockFound($b->getId(), true);
+                processFoundBlockWithTransaction($b, $tx);
+            }
+        }
+    }
+}
+foreach ($database->getUncleBlocksByQuery("WHERE miner_main_difficulty = 'ffffffffffffffffffffffffffffffff' ORDER BY main_height ASC") as $b){ //Fix uncle without height
+    cacheHeightDiff($b->getMainHeight());
+    if(isset($difficultyCache[$b->getMainHeight()])){
+        echo "[CHAIN] Filling main difficulty for uncle share " . $b->getHeight() . ", main height " . $b->getMainHeight() . "\n";
+        $diff = $difficultyCache[$b->getMainHeight()];
+        $database->setBlockMainDifficulty($b->getId(), $diff);
+        $b = $database->getUncleById($b->getId());
+
+        if(!$b->isMainFound() and $b->isProofHigherThanDifficulty()){
+            echo "[CHAIN] BLOCK FOUND! Main height " . $b->getMainHeight() . ", main id " . $b->getMainId() . "\n";
+            $tx = null;
+            try{
+                $tx = MoneroCoinbaseTransactionOutputs::fromTransactionId($b->getCoinbaseId());
+            }catch (\Throwable $e){
+
+            }
+            if($tx !== null){
+                $database->setBlockFound($b->getId(), true);
+                processFoundBlockWithTransaction($b, $tx);
+            }
+        }
+    }
+}
+
 do{
     ++$runs;
     $disk_tip = $api->getShareEntry($knownTip);
@@ -147,10 +215,12 @@ do{
         }
         echo "[CHAIN] Inserting block " . $disk_block->getId() . " at height " . $disk_block->getHeight() . "\n";
 
-        if($database->insertBlock($disk_block)){
+        cacheHeightDiff($disk_block->getMainHeight());
+
+        if($database->insertBlock($disk_block, $difficultyCache[$disk_block->getMainHeight()] ?? null)){
             foreach ($uncles as $uncle){
                 echo "[CHAIN] Inserting uncle " . $uncle->getId() . " @ " . $disk_block->getId() . " at " . $disk_block->getHeight() . "\n";
-                $database->insertUncleBlock($uncle);
+                $database->insertUncleBlock($uncle, $difficultyCache[$uncle->getMainHeight()] ?? null);
 
                 if($uncle->isMainFound()){
                     echo "[CHAIN] BLOCK FOUND! (uncle) Main height " . $uncle->getMainHeight() . ", main id " . $uncle->getMainId() . "\n";

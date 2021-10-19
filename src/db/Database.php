@@ -148,6 +148,11 @@ class Database{
         return $deleted;
     }
 
+    public function setBlockMainDifficulty(string $id, string $diff) {
+        pg_query_params($this->db, "UPDATE blocks SET miner_main_difficulty = $2 WHERE id = $1;", [$id, $diff]);
+        pg_query_params($this->db, "UPDATE uncles SET miner_main_difficulty = $2 WHERE id = $1;", [$id, $diff]);
+    }
+
     public function setBlockFound(string $id, bool $found = true) {
         pg_query_params($this->db, "UPDATE blocks SET main_found = $2 WHERE id = $1;", [$id, $found ? 'y' : 'n']);
         pg_query_params($this->db, "UPDATE uncles SET main_found = $2 WHERE id = $1;", [$id, $found ? 'y' : 'n']);
@@ -234,9 +239,13 @@ class Database{
         return pg_query_params($this->db, "INSERT INTO coinbase_outputs (id, index, miner, amount) VALUES ($1, $2, $3, $4);", [$output->getId(), $output->getIndex(), $output->getMiner(), $output->getAmount()]) !== false;
     }
 
-    public function insertBlock(Block $b): bool {
+    public function insertBlock(Block $b, string $fallbackMainDifficulty = null): bool {
         $block = $this->getBlockById($b->getId());
+        $main_diff = ($b->getMinerMainDifficulty() === "ffffffffffffffffffffffffffffffff" and $fallbackMainDifficulty) ? $fallbackMainDifficulty : $b->getMinerMainDifficulty();
         if($block !== null){ //Update found status if existent
+            if($block->getMinerMainDifficulty() !== $main_diff and $main_diff !== "ffffffffffffffffffffffffffffffff"){
+                $this->setBlockMainDifficulty($block->getId(), $main_diff);
+            }
             if($b->isMainFound() and !$block->isMainFound()){
                 $this->setBlockFound($block->getId(), true);
             }
@@ -244,22 +253,29 @@ class Database{
         }
 
         return pg_query_params($this->db, "INSERT INTO blocks (id, height, previous_id, coinbase_id, coinbase_reward, coinbase_privkey, difficulty, timestamp, miner, pow_hash, main_height, main_id, main_found, miner_main_id, miner_main_difficulty) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)", [
-           $b->getId(), $b->getHeight(), $b->getPreviousId(), $b->getCoinbaseId(), $b->getCoinbaseReward(), $b->getCoinbasePrivkey(), $b->getDifficulty(), $b->getTimestamp(), $b->getMiner(), $b->getPowHash(), $b->getMainHeight(), $b->getMainId(), $b->isMainFound() ? "y" : "n", $b->getMinerMainId(), $b->getMinerMainDifficulty()
+           $b->getId(), $b->getHeight(), $b->getPreviousId(), $b->getCoinbaseId(), $b->getCoinbaseReward(), $b->getCoinbasePrivkey(), $b->getDifficulty(), $b->getTimestamp(), $b->getMiner(), $b->getPowHash(), $b->getMainHeight(), $b->getMainId(), $b->isMainFound() ? "y" : "n", $b->getMinerMainId(), $main_diff
         ]) !== false;
     }
 
-    public function insertUncleBlock(UncleBlock $u): bool {
+    public function insertUncleBlock(UncleBlock $u, string $fallbackMainDifficulty = null): bool {
         $block = $this->getBlockById($u->getParentId());
         if($block === null){
             return false;
         }
         $uncle = $this->getUncleById($u->getId());
+        $main_diff = ($u->getMinerMainDifficulty() === "ffffffffffffffffffffffffffffffff" and $fallbackMainDifficulty) ? $fallbackMainDifficulty : $u->getMinerMainDifficulty();
         if($uncle !== null){
+            if($u->getMinerMainDifficulty() !== $main_diff and $main_diff !== "ffffffffffffffffffffffffffffffff"){
+                $this->setBlockMainDifficulty($u->getId(), $main_diff);
+            }
+            if($u->isMainFound() and !$uncle->isMainFound()){
+                $this->setBlockFound($uncle->getId(), true);
+            }
             return true;
         }
 
         return pg_query_params($this->db, "INSERT INTO uncles (parent_id, parent_height, id, height, previous_id, coinbase_id, coinbase_reward, coinbase_privkey, difficulty, timestamp, miner, pow_hash, main_height, main_id, main_found, miner_main_id, miner_main_difficulty) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)", [
-                $u->getParentId(), $u->getParentHeight(), $u->getId(), $u->getHeight(), $u->getPreviousId(), $u->getCoinbaseId(), $u->getCoinbaseReward(), $u->getCoinbasePrivkey(), $u->getDifficulty(), $u->getTimestamp(), $u->getMiner(), $u->getPowHash(), $u->getMainHeight(), $u->getMainId(), $u->isMainFound() ? "y" : "n", $u->getMinerMainId(), $u->getMinerMainDifficulty()
+                $u->getParentId(), $u->getParentHeight(), $u->getId(), $u->getHeight(), $u->getPreviousId(), $u->getCoinbaseId(), $u->getCoinbaseReward(), $u->getCoinbasePrivkey(), $u->getDifficulty(), $u->getTimestamp(), $u->getMiner(), $u->getPowHash(), $u->getMainHeight(), $u->getMainId(), $u->isMainFound() ? "y" : "n", $u->getMinerMainId(), $main_diff
             ]) !== false;
     }
 
