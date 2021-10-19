@@ -17,10 +17,19 @@ class MoneroCoinbaseTransactionOutputs{
     public function matchOutputs(array $miners, string $tx_privkey): array {
         $matched = [];
         $outputs = $this->outputs;
-        ksort($miners);
-        foreach ($miners as $ix => $miner){
+
+        $sortedAddresses = [];
+        foreach ($miners as $miner){
+            $sortedAddresses[strrev(hex2bin($miner->getMoneroAddress()->getSpendPub())) . strrev(hex2bin($miner->getMoneroAddress()->getViewPub()))] = $miner;
+        }
+
+        uksort($sortedAddresses, function ($a, $b){
+            return strcmp($a, $b);
+        });
+
+        foreach ($sortedAddresses as $pub => $miner){
             $ma = $miner->getMoneroAddress();
-            foreach ($this->outputs as $i => $o){
+            foreach ($outputs as $i => $o){
                 if($ma->getEphemeralPublicKey($tx_privkey, $o->index) === $o->key){
                     $matched[$miner->getId()] = clone $o;
                     unset($outputs[$i]);
