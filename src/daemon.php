@@ -106,7 +106,7 @@ function cacheHeightDiff(int $height){
     global $difficultyCache;
     if(!isset($difficultyCache[$height])){
         $header = Utils::monero_GetBlockHeaderByHeight($height);
-        sleep(1);
+        usleep(100000);
         if($header === null){
             $template = Utils::monero_GetBlockTemplate();
             if($template !== null){
