@@ -115,7 +115,8 @@ function cacheHeightDiff(int $height){
             $difficultyCache[$header->height] = str_pad(gmp_strval(gmp_init($header->difficulty), 16), 32, "0", STR_PAD_LEFT);
         }
 
-        if(count($difficultyCache) > 1024){
+        if(count($difficultyCache) > 128){
+            sleep(1);
             array_shift($difficultyCache);
         }
     }
