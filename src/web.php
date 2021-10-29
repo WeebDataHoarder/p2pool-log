@@ -183,6 +183,94 @@ $server = new HttpServer(function (ServerRequestInterface $request){
         });
     }
 
+    if($request->getUri()->getPath() === "/miners"){
+
+        if(isset($params["refresh"])){
+            $headers["refresh"] = "600";
+        }
+
+        return new Promise(function ($resolve, $reject) use($headers) {
+            getFromAPI("pool_info", 5)->then(function ($pool_info) use ($resolve, $headers) {
+                getFromAPI("shares?onlyBlocks&limit=" . SIDECHAIN_PPLNS_WINDOW, 30)->then(function ($shares) use ($resolve, $pool_info, $headers) {
+                    $miners = [];
+
+                    $wsize = SIDECHAIN_PPLNS_WINDOW;
+                    $count = 30;
+
+                    $window_diff = gmp_init(0);
+
+                    $tip = $pool_info->sidechain->height;
+                    $wend = $tip - SIDECHAIN_PPLNS_WINDOW;
+
+                    $tip = $shares[0];
+                    foreach ($shares as $share){
+                        if(!isset($miners[$share->miner])){
+                            $miners[$share->miner] = (object) [
+                              "weight" => gmp_init(0),
+                              "shares" => array_fill(0, $count, 0),
+                              "uncles" => array_fill(0, $count, 0)
+                            ];
+                        }
+
+                        $index = intdiv($tip->height - $share->height, intdiv($wsize + $count - 1, $count));
+                        $miners[$share->miner]->shares[$index]++;
+                        $diff = gmp_init($share->weight, 16);
+                        $miners[$share->miner]->weight = gmp_add($miners[$share->miner]->weight, $diff);
+                        $window_diff = gmp_add($window_diff, $diff);
+
+                        foreach ($share->uncles as $uncle){
+                            if($uncle->height <= $wend){
+                                continue;
+                            }
+                            if(!isset($miners[$uncle->miner])){
+                                $miners[$uncle->miner] = (object) [
+                                    "weight" => gmp_init(0),
+                                    "shares" => array_fill(0, $count, 0),
+                                    "uncles" => array_fill(0, $count, 0)
+                                ];
+                            }
+                            $index = intdiv($tip->height - $uncle->height, intdiv($wsize + $count - 1, $count));
+                            $miners[$uncle->miner]->uncles[$index]++;
+                            $diff = gmp_init($uncle->weight, 16);
+                            $miners[$uncle->miner]->weight = gmp_add($miners[$uncle->miner]->weight, $diff);
+                            $window_diff = gmp_add($window_diff, $diff);
+                        }
+                    }
+
+                    uasort($miners, function ($a, $b){
+                       return gmp_cmp($b->weight, $a->weight);
+                    });
+
+                    foreach ($miners as $miner){
+                        $shares_position = "[<";
+                        foreach (array_reverse($miner->shares) as $i => $p){
+                            $shares_position .= ($p > 0 ? ($p > 9 ? "+" : (string) $p) : ".");
+                        }
+                        $shares_position .= "<]";
+
+                        $uncles_position = "[<";
+                        foreach (array_reverse($miner->uncles) as $i => $p){
+                            $uncles_position .= ($p > 0 ? ($p > 9 ? "+" : (string) $p) : ".");
+                        }
+                        $uncles_position .= "<]";
+
+                        $miner->shares_position = $shares_position;
+                        $miner->uncles_position = $uncles_position;
+                    }
+
+
+
+                    $resolve(render("miners.html", [
+                        "refresh" => isset($headers["refresh"]) ? (int) $headers["refresh"] : false,
+                        "miners" => $miners,
+                        "tip" => $tip,
+                        "pool" => $pool_info
+                    ], 200, $headers));
+                }, fetchReject($resolve));
+            }, fetchReject($resolve));
+        });
+    }
+
     if(preg_match("#^/share/(?P<block>[0-9a-f]{64}|[0-9]+)$#", $request->getUri()->getPath(), $matches) > 0){
         $identifier = $matches["block"];
         $k = preg_match("#^[0-9a-f]{64}$#", $identifier) > 0 ? "id" : "height";

@@ -24,14 +24,6 @@ ul{
     margin-bottom: 30px;
 }
 
-.small {
-    font-size: 80%;
-}
-
-.smaller {
-    font-size: 60%;
-}
-
 .center {
     margin-left: auto;
     margin-right: auto;
@@ -65,4 +57,20 @@ h1 {
 
 h1 a {
     text-decoration: none !important;
+}
+
+.small {
+    font-size: 80%;
+}
+
+.smaller {
+    font-size: 60%;
+}
+
+code.small {
+    font-size: 10px;
+}
+
+code.smaller {
+    font-size: 8px;
 }

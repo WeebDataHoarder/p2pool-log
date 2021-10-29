@@ -43,13 +43,13 @@
         </tr>
         <tr><th colspan="4">&nbsp;</th></tr>
         <tr>
-            <th title="Current miners on P2Pool PPLNS window">Window Miners</th>
+            <th title="Current miners on P2Pool PPLNS window"><a href="/miners">Window Miners</a></th>
             <th>Current Effort</th>
             <th>Window Blocks</th>
             <th>Last Share</th>
         </tr>
         <tr>
-            <td>{{ pool.sidechain.window.miners }}</td>
+            <td><a href="/miners">{{ pool.sidechain.window.miners }}</a></td>
             <td style="font-weight:bolder; color: {{ pool.sidechain.effort.current|effort_color }};">
                 {{ pool.sidechain.effort.current|round(2) }}%
             </td>
@@ -72,6 +72,9 @@
     </form>
     <p>
         <a href="/calculate-share-time">[Average share time calculator]</a>
+    </p>
+    <p>
+        <a href="/miners">[Current Window Miners]</a>
     </p>
 </div>
 

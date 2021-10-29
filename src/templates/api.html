@@ -291,8 +291,8 @@ curl --silent https://{{ getenv('NET_SERVICE_ADDRESS') }}/api/found_blocks?limit
     <hr/>
 
     <div>
-        <h3 class="mono">/api/shares?limit=[limit]&miner=[id|address]</h3>
-        <p>Response contains last found share records on P2Pool. Optional parameters are <em>limit</em>, maximum amount of records to return, defaults to 50, max SIDECHAIN_PPLNS_WINDOW. Additionally, you can pass the <em>miner</em> parameter to select shares from that miner only. <em>coinbase</em> parameter can also be used here to decode coinbase outputs</p>
+        <h3 class="mono">/api/shares?limit=[limit]&miner=[id|address]&[onlyBlocks]</h3>
+        <p>Response contains last found share records on P2Pool. Optional parameters are <em>limit</em>, maximum amount of records to return, defaults to 50, max SIDECHAIN_PPLNS_WINDOW. Additionally, you can pass the <em>miner</em> parameter to select shares from that miner only. <em>onlyBlocks</em> can be set to not receive uncle share entries. <em>coinbase</em> parameter can also be used here to decode coinbase outputs</p>
         <pre class="smaller">
 curl --silent https://{{ getenv('NET_SERVICE_ADDRESS') }}/api/shares?limit=2
 [

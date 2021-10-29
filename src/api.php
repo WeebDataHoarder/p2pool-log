@@ -77,7 +77,7 @@ function getBlockAsJSONData(P2PoolAPI $api, Block $b, $extraUncleData = false, $
     }else{
         $data["uncles"] = [];
         foreach ($api->getDatabase()->getUnclesByParentId($b->getId()) as $u){
-            $uncle_weight = gmp_div(gmp_mul(gmp_init($u->getDifficulty(), 16), SIDECHAIN_UNCLE_PENALTY), 100);
+            $uncle_weight = gmp_div(gmp_mul($base_uncle_weight = gmp_init($u->getDifficulty(), 16), SIDECHAIN_UNCLE_PENALTY), 100);
             $weight = gmp_add($weight, $uncle_weight);
 
             if(!$extraUncleData){
@@ -94,7 +94,7 @@ function getBlockAsJSONData(P2PoolAPI $api, Block $b, $extraUncleData = false, $
                     "timestamp" => $u->getTimestamp(),
                     "miner" => $api->getDatabase()->getMiner($u->getMiner())->getAddress(),
                     "pow" => $u->getPowHash(),
-                    "weight" => gmp_intval($uncle_weight),
+                    "weight" => gmp_intval(gmp_sub($base_uncle_weight, $uncle_weight)),
                 ];
             }
         }
@@ -485,6 +485,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
         parse_str($request->getUri()->getQuery(), $params);
 
         $limit = isset($params["limit"]) ? (int) min(SIDECHAIN_PPLNS_WINDOW, $params["limit"]) : 50;
+        $onlyBlocks = isset($params["onlyBlocks"]);
 
         $minerId = 0;
         if(isset($params["miner"])){
@@ -502,7 +503,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
 
         $ret = [];
 
-        foreach ($api->getDatabase()->getShares($limit, $minerId) as $b){
+        foreach ($api->getDatabase()->getShares($limit, $minerId, $onlyBlocks) as $b){
             $ret[] = getBlockAsJSONData($api, $b, true, isset($params["coinbase"]));
         }
 

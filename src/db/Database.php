@@ -293,7 +293,7 @@ class Database{
      * @param int|null $minerId
      * @return \Iterator|Block[]
      */
-    public function getShares(int $limit = 50, int $minerId = 0) : \Iterator {
+    public function getShares(int $limit = 50, int $minerId = 0, bool $onlyBlocks = false) : \Iterator {
         $blocks = $this->getBlocksByQuery(($minerId !== 0 ? "WHERE miner = $2 " : "") . "ORDER BY height DESC, timestamp DESC LIMIT $1", $minerId !== 0  ? [$limit, $minerId] : [$limit]);
         $uncles = $this->getUncleBlocksByQuery(($minerId !== 0 ? "WHERE miner = $2 " : "") . "ORDER BY height DESC, timestamp DESC LIMIT $1", $minerId !== 0  ? [$limit, $minerId] : [$limit]);
 
@@ -306,7 +306,7 @@ class Database{
                     $current = $blocks->current();
                 }
             }
-            if($uncles->current() !== null){
+            if(!$onlyBlocks and $uncles->current() !== null){
                 if($current === null or $uncles->current()->getHeight() > $current->getHeight()){
                     $current = $uncles->current();
                 }
@@ -318,7 +318,7 @@ class Database{
 
             if($blocks->current() === $current){
                 $blocks->next();
-            }else if($uncles->current() === $current){
+            }else if(!$onlyBlocks and $uncles->current() === $current){
                 $uncles->next();
             }
 
