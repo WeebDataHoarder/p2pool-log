@@ -599,7 +599,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
                     $result[] = [
                         "height" => (int) $entry["height"],
                         "timestamp" => (int) $entry["timestamp"],
-                        "difficulty" => $entry["difficulty"]
+                        "difficulty" => gmp_intval(gmp_init($entry["difficulty"], 16))
                     ];
                 }
                 return new Response(200, [
