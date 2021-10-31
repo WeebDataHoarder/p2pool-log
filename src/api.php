@@ -56,10 +56,28 @@ function getBlockAsJSONData(P2PoolAPI $api, Block $b, $extraUncleData = false, $
             }
         }else{
             $payouts = $api->getBlockWindowPayouts($b);
+
+            $outputs = [];
             foreach ($payouts as $minerId => $amount){
-                $data["coinbase"]["payouts"][$api->getDatabase()->getMiner($minerId)] = [
+                $miner = $api->getDatabase()->getMiner($minerId);
+                $ma = $miner->getMoneroAddress();
+                $outputs[strrev(hex2bin($ma->getSpendPub())) . strrev(hex2bin($ma->getViewPub()))] = (object) [
+                    "address" => $miner->getAddress(),
                     "amount" => $amount
                 ];
+            }
+            uksort($outputs, function ($a, $b){
+                return strcmp($a, $b);
+            });
+
+            $index = 0;
+            foreach ($outputs as $o){
+                $data["coinbase"]["payouts"][$index] = [
+                    "amount" => $o->amount,
+                    "index" => $index,
+                    "address" => $o->address,
+                ];
+                $index++;
             }
         }
         ksort($data["coinbase"]["payouts"]);
