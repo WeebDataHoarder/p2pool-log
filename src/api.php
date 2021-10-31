@@ -590,6 +590,48 @@ $server = new HttpServer(function (ServerRequestInterface $request){
         }
     }
 
+
+    if(preg_match("#^/api/stats/(?P<kind>difficulty|miner_seen|miner_seen_window)$#", $request->getUri()->getPath(), $matches) > 0){
+        switch ($matches["kind"]){
+            case "difficulty":
+                $result = [];
+                foreach ($api->getDatabase()->query("SELECT height,timestamp,difficulty FROM blocks WHERE height % $1 = 0 ORDER BY height DESC;", [3600 / SIDECHAIN_BLOCK_TIME]) as $entry){
+                    $result[] = [
+                        "height" => (int) $entry["height"],
+                        "timestamp" => (int) $entry["timestamp"],
+                        "difficulty" => $entry["difficulty"]
+                    ];
+                }
+                return new Response(200, [
+                    "Content-Type" => "application/json; charset=utf-8"
+                ], json_encode($result, JSON_UNESCAPED_SLASHES | ($isKnownBrowser ? JSON_PRETTY_PRINT : 0)));
+            case "miner_seen":
+                $result = [];
+                foreach ($api->getDatabase()->query("SELECT height,timestamp,(SELECT COUNT(DISTINCT(b.miner)) FROM blocks b WHERE b.height <= blocks.height AND b.height > (blocks.height - $2)) as count FROM blocks WHERE height % $1 = 0 ORDER BY height DESC;", [(3600 * 24) / SIDECHAIN_BLOCK_TIME, (3600 * 24 * 7) / SIDECHAIN_BLOCK_TIME]) as $entry){
+                    $result[] = [
+                        "height" => (int) $entry["height"],
+                        "timestamp" => (int) $entry["timestamp"],
+                        "miners" => (int) $entry["count"]
+                    ];
+                }
+                return new Response(200, [
+                    "Content-Type" => "application/json; charset=utf-8"
+                ], json_encode($result, JSON_UNESCAPED_SLASHES | ($isKnownBrowser ? JSON_PRETTY_PRINT : 0)));
+            case "miner_seen_window":
+                $result = [];
+                foreach ($api->getDatabase()->query("SELECT height,timestamp,(SELECT COUNT(DISTINCT(b.miner)) FROM blocks b WHERE b.height <= blocks.height AND b.height > (blocks.height - $2)) as count FROM blocks WHERE height % $1 = 0 ORDER BY height DESC;", [SIDECHAIN_PPLNS_WINDOW, SIDECHAIN_PPLNS_WINDOW]) as $entry){
+                    $result[] = [
+                        "height" => (int) $entry["height"],
+                        "timestamp" => (int) $entry["timestamp"],
+                        "miners" => (int) $entry["count"]
+                    ];
+                }
+                return new Response(200, [
+                    "Content-Type" => "application/json; charset=utf-8"
+                ], json_encode($result, JSON_UNESCAPED_SLASHES | ($isKnownBrowser ? JSON_PRETTY_PRINT : 0)));
+        }
+    }
+
     return new Response(404, [
         "Content-Type" => "application/json; charset=utf-8"
     ], json_encode(["error" => "method_not_found"]));
