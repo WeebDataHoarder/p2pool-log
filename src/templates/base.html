@@ -5,10 +5,10 @@
         <meta name="referrer" content="no-referrer">
         <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
         {% if getenv('SITE_TITLE') == "" %}
-        <title>P2Pool.Observer{% block title %}{% endblock %}</title>
+        <title>P2Pool.Observer
         {% else %}
-        <title>{{ getenv('SITE_TITLE') }}{% block title %}{% endblock %}</title>
-        {% endif %}
+        <title>{{ getenv('SITE_TITLE') }}
+        {% endif %}{% block title %}{% endblock %}</title>
         <style>
             {% block style %}
                 {{ include('style.css') }}
