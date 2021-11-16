@@ -4,7 +4,11 @@
         <meta charset="utf-8">
         <meta name="referrer" content="no-referrer">
         <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+        {% if getenv('SITE_TITLE') == "" %}
         <title>P2Pool.Observer{% block title %}{% endblock %}</title>
+        {% else %}
+        <title>{{ getenv('SITE_TITLE') }}{% block title %}{% endblock %}</title>
+        {% endif %}
         <style>
             {% block style %}
                 {{ include('style.css') }}

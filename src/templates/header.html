@@ -1,5 +1,6 @@
 <div>
     <div class="center" style="text-align: center">
+        {% if getenv('SITE_TITLE') == "" %}
         <h1 class="center"><a href="/">Monero P2Pool.Observer</a></h1>
         <h4 style="font-size: 15px; margin: 0px">
             <a href="https://github.com/SChernykh/p2pool">What is P2Pool?</a>
@@ -23,6 +24,16 @@
             ::
             <strong>NOTE:</strong> This site is in development. You might find errors or invalid data.
         </h4>
+        {% else %}
+        <h1 class="center"><a href="/">Monero {{ getenv('SITE_TITLE') }}</a></h1>
+        <h4 style="font-size: 15px; margin: 0px">
+            <a href="https://github.com/SChernykh/p2pool">What is P2Pool?</a>
+            ::
+            <a href="https://github.com/SChernykh/p2pool#how-to-mine-on-p2pool">How to join P2Pool</a>
+            ::
+            <a href="/api">API Documentation</a>
+        </h4>
+        {% endif %}
 
     </div>
 </div>
