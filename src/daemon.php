@@ -16,6 +16,23 @@ require_once __DIR__ . "/constants.php";
 $api = new P2PoolAPI(new Database($argv[1]), "/api");
 $database = $api->getDatabase();
 
+if(isset($argv[2]) and isset($argv[3])){
+    for($h = $argv[2]; $h < $argv[3]; ++$h){
+        $uncles = [];
+        $block = $api->getShareEntry($h, $uncles);
+        $uncles = [];
+        $id = $block->getId();
+        $block = $api->getShareFromRawEntry($block->getId(), $uncles, true);
+        if($block === null){
+            echo "[CHAIN] Could not find block $id to insert at height $h. Check disk or uncles\n";
+        }
+        $database->insertBlock($block);
+        foreach ($uncles as $uncle){
+            $database->insertUncleBlock($uncle);
+        }
+    }
+}
+
 $tip = $database->getChainTip();
 $isFresh = $tip === null;
 $tip = $tip === null ? 1 : $tip->getHeight();
