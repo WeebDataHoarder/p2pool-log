@@ -18,8 +18,12 @@ $database = $api->getDatabase();
 
 if(isset($argv[2]) and isset($argv[3])){
     for($h = $argv[2]; $h < $argv[3]; ++$h){
+        echo " inserting $h...\n";
         $uncles = [];
         $block = $api->getShareEntry($h, $uncles);
+        if($block === null){
+            continue;
+        }
         $uncles = [];
         $id = $block->getId();
         $block = $api->getShareFromRawEntry($block->getId(), $uncles, true);
