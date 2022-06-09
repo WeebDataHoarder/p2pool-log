@@ -80,12 +80,16 @@ CREATE TABLE coinbase_outputs (
 
 CREATE INDEX blocks_coinbase_id_idx ON blocks (coinbase_id);
 CREATE INDEX blocks_miner_idx ON blocks (miner);
+CREATE INDEX blocks_main_height_idx ON blocks (main_height);
+CREATE INDEX blocks_main_found_idx ON blocks (main_found);
 CREATE INDEX uncles_coinbase_id_idx ON uncles (coinbase_id);
 CREATE INDEX uncles_height_idx ON uncles (height);
 CREATE INDEX uncles_parent_id_idx ON uncles (parent_id);
 CREATE INDEX uncles_main_id_idx ON uncles (main_id);
 CREATE INDEX uncles_parent_height_idx ON uncles (parent_height);
 CREATE INDEX uncles_miner_idx ON uncles (miner);
+CREATE INDEX uncles_main_height_idx ON uncles (main_height);
+CREATE INDEX uncles_main_found_idx ON uncles (main_found);
 
 CREATE INDEX subscriptions_miner_idx ON subscriptions (miner);
 CREATE INDEX nick_miner_idx ON subscriptions (nick);

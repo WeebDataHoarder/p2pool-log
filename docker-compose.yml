@@ -144,6 +144,7 @@ services:
     image: postgres:13.4
     restart: always
     read_only: true
+    shm_size: 1gb
     security_opt:
       - no-new-privileges:true
     environment:
