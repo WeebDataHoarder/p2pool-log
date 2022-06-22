@@ -78,6 +78,12 @@ function cleanupCodes($text){
     return preg_replace('/[\r\n\t]|[\x02\x0F\x16\x1D\x1F]|\x03(\d{,2}(,\d{,2})?|(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~])?/u', "",  $text);
 }
 
+function isGuestUser($originalSender) : bool {
+    if(preg_match("/^Guest[0-9]+_*$/", $originalSender["user"]) > 0){
+        return true;
+    }
+    return false;
+}
 
 function handleNewJoin($sender, $senderCloak, $channel){
 
@@ -122,6 +128,12 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
             "match" => "#^\\.(sub|subscribe)[ \t]+(4[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+)[ \t]*#iu",
             "command" => function($originalSender, $answer, $to, $matches){
                 global $database, $api;
+
+                if(isGuestUser($originalSender)){
+                    sendIRCMessage("Subscriptions to guest users are not allowed.", $answer);
+                    return;
+                }
+
                 $maddress = null;
                 try{
                     $maddress = new MoneroAddress($matches[2]);
@@ -171,6 +183,20 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
                 $sub = new Subscription($miner->getId(), $originalSender["user"]);
                 $database->removeSubscription($sub);
                 sendIRCMessage("Unsubscribed your nick to shares found by " . FORMAT_ITALIC . shortenAddress($maddress->getAddress()), $answer);
+            },
+        ],
+        [
+            "targets" => [BOT_NICK, BOT_COMMANDS_CHANNEL],
+            "permission" => PERMISSION_NONE,
+            "match" => "#^\\[.!]?(unsub|unsubscribe)[ \t]*#iu",
+            "command" => function($originalSender, $answer, $to, $matches){
+                global $database;
+                $removed = 0;
+                foreach($database->getSubscriptionsFromNick($originalSender["user"]) as $sub){
+                    $database->removeSubscription($sub);
+                    ++$removed;
+                }
+                sendIRCMessage("Unsubscribed your nick from $removed subscriptions.", $answer);
             },
         ],
         [
