@@ -188,7 +188,7 @@ function handleNewMessage($sender, $senderCloak, $to, $message, $isAction = fals
         [
             "targets" => [BOT_NICK, BOT_COMMANDS_CHANNEL],
             "permission" => PERMISSION_NONE,
-            "match" => "#^\\[.!]?(unsub|unsubscribe)[ \t]*#iu",
+            "match" => "#^[.!]?(unsub|unsubscribe)[ \t]*#iu",
             "command" => function($originalSender, $answer, $to, $matches){
                 global $database;
                 $removed = 0;
