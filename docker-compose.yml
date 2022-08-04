@@ -12,7 +12,7 @@ volumes:
 
 services:
   tor:
-    image: goldy/tor-hidden-service:0.4.6.9
+    image: goldy/tor-hidden-service:v0.4.7.8-57f8867
     tmpfs:
       - /tmp
     restart: always
