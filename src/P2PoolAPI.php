@@ -70,6 +70,7 @@ class P2PoolAPI{
         try{
             $raw = BinaryBlock::fromHexDump($this->getRawBlock($id));
         }catch (\Throwable $e){
+            echo $e;
             return null;
         }
 
@@ -79,7 +80,7 @@ class P2PoolAPI{
             try{
                 $u[] = BinaryBlock::fromHexDump($this->getRawBlock($uncle));
             }catch (\Throwable $e){
-
+                echo $e;
             }
         }
 
