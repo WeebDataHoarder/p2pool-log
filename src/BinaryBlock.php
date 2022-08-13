@@ -296,6 +296,7 @@ class BinaryBlock{
             $reward = self::readVARINT($main, $index);
             $k = self::readUINT8($main, $index);
             switch ($k){
+                case TXOUT_TO_TAGGED_KEY:
                 case TXOUT_TO_KEY:
                     $ephPublicKey = bin2hex(self::readBinary($main, self::HASH_SIZE, $index));
                     $b->coinbaseTxOutputs[$i] = (object) [
@@ -303,9 +304,10 @@ class BinaryBlock{
                         "ephemeralPublicKey" => $ephPublicKey,
                         "reward" => $reward
                     ];
-                case TXOUT_TO_TAGGED_KEY:
-                    $viewTag = self::readUINT8($main, $index);
-                    $b->coinbaseTxOutputs[$i]->viewTag = $viewTag;
+                    if($k === TXOUT_TO_TAGGED_KEY){
+                        $viewTag = self::readUINT8($main, $index);
+                        $b->coinbaseTxOutputs[$i]->viewTag = $viewTag;
+                    }
                     break;
                 default:
                     throw new Exception("Unknown $k TXOUT key");
