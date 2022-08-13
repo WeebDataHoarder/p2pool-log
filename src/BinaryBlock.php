@@ -4,6 +4,7 @@ namespace p2pool;
 
 use MoneroIntegrations\MoneroPhp\Cryptonote;
 use MoneroIntegrations\MoneroPhp\SHA3;
+use mysql_xdevapi\Exception;
 
 class BinaryBlock{
 
@@ -293,13 +294,22 @@ class BinaryBlock{
         $outputCount = self::readVARINT($main, $index);
         for($i = 0; $i < $outputCount; ++$i){
             $reward = self::readVARINT($main, $index);
-            $k = self::readUINT8($main, $index); //TODO: EXPECT TXOUT_TO_KEY
-            $ephPublicKey = bin2hex(self::readBinary($main, self::HASH_SIZE, $index));
-            $b->coinbaseTxOutputs[$i] = (object) [
-                "index" => $i,
-                "ephemeralPublicKey" => $ephPublicKey,
-                "reward" => $reward
-            ];
+            $k = self::readUINT8($main, $index);
+            switch ($k){
+                case TXOUT_TO_KEY:
+                    $ephPublicKey = bin2hex(self::readBinary($main, self::HASH_SIZE, $index));
+                    $b->coinbaseTxOutputs[$i] = (object) [
+                        "index" => $i,
+                        "ephemeralPublicKey" => $ephPublicKey,
+                        "reward" => $reward
+                    ];
+                case TXOUT_TO_TAGGED_KEY:
+                    $viewTag = self::readUINT8($main, $index);
+                    $b->coinbaseTxOutputs[$i]->viewTag = $viewTag;
+                    break;
+                default:
+                    throw new Exception("Unknown $k TXOUT key");
+            }
         }
 
         $txExtra = self::readBinary($main, self::readVARINT($main, $index), $index);
