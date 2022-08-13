@@ -4,7 +4,6 @@ namespace p2pool;
 
 use MoneroIntegrations\MoneroPhp\Cryptonote;
 use MoneroIntegrations\MoneroPhp\SHA3;
-use mysql_xdevapi\Exception;
 
 class BinaryBlock{
 
@@ -310,7 +309,7 @@ class BinaryBlock{
                     }
                     break;
                 default:
-                    throw new Exception("Unknown $k TXOUT key");
+                    throw new \Exception("Unknown $k TXOUT key");
             }
         }
 
