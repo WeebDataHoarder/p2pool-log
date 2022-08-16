@@ -280,7 +280,7 @@ class Database{
     }
 
     public function getChainTip() : ?Block {
-        return iterator_to_array($this->getBlocksByQuery("WHERE height = (SELECT MAX(height) FROM blocks)"))[0] ?? null;
+        return iterator_to_array($this->getBlocksByQuery("ORDER BY height DESC LIMIT 1"))[0] ?? null;
     }
 
     public function getLastFound() : ?Block {
@@ -294,7 +294,7 @@ class Database{
      * @return \Iterator|Block[]
      */
     public function getShares(int $limit = 50, int $minerId = 0, bool $onlyBlocks = false) : \Iterator {
-        $blocks = $this->getBlocksByQuery(($minerId !== 0 ? "WHERE miner = $2 " : "") . "ORDER BY height DESC, timestamp DESC LIMIT $1", $minerId !== 0  ? [$limit, $minerId] : [$limit]);
+        $blocks = $this->getBlocksByQuery(($minerId !== 0 ? "WHERE miner = $2 " : "") . "ORDER BY height DESC LIMIT $1", $minerId !== 0  ? [$limit, $minerId] : [$limit]);
         $uncles = $this->getUncleBlocksByQuery(($minerId !== 0 ? "WHERE miner = $2 " : "") . "ORDER BY height DESC, timestamp DESC LIMIT $1", $minerId !== 0  ? [$limit, $minerId] : [$limit]);
 
         for($i = 0; $limit === null or $i < $limit; ++$i){
