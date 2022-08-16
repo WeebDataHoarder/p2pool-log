@@ -160,7 +160,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
 
 
 
-        $totalKnown = iterator_to_array($api->getDatabase()->query("SELECT (SELECT COUNT(*) FROM blocks WHERE main_found = 'y') + (SELECT COUNT(*) FROM uncles WHERE main_found = 'y') as found, COUNT(*) as miners FROM (SELECT DISTINCT(miner) FROM blocks UNION DISTINCT SELECT DISTINCT(miner) FROM uncles) all_known_miners;"))[0];
+        $totalKnown = iterator_to_array($api->getDatabase()->query("SELECT (SELECT COUNT(*) FROM blocks WHERE main_found = 'y') + (SELECT COUNT(*) FROM uncles WHERE main_found = 'y') as found, COUNT(*) as miners FROM (SELECT miner FROM blocks GROUP BY miner UNION DISTINCT SELECT miner FROM uncles GROUP BY miner) all_known_miners;"))[0];
 
 
         $poolBlocks = $api->getPoolBlocks();
