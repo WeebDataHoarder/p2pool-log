@@ -127,6 +127,24 @@ function getBlockAsJSONData(P2PoolAPI $api, Block $b, $extraUncleData = false, $
     return $data;
 }
 
+$queryCache = [];
+
+function cacheResult(string $name, int $cacheTime, callable $result) : array {
+    global $queryCache;
+
+    if($cacheTime > 0 and isset($queryCache[$name]) and ($queryCache[$name][0] + $cacheTime) >= time()){
+        return $queryCache[$name][1];
+    }
+
+    $v = $result();
+
+
+    if($cacheTime > 0){
+        $queryCache[$name] = [time(), $v];
+    }
+    return $v;
+}
+
 $server = new HttpServer(function (ServerRequestInterface $request){
     global $api;
     if($request->getMethod() !== "GET"){ //TODO: remote calls
@@ -160,7 +178,9 @@ $server = new HttpServer(function (ServerRequestInterface $request){
 
 
 
-        $totalKnown = iterator_to_array($api->getDatabase()->query("SELECT (SELECT COUNT(*) FROM blocks WHERE main_found = 'y') + (SELECT COUNT(*) FROM uncles WHERE main_found = 'y') as found, COUNT(*) as miners FROM (SELECT miner FROM blocks GROUP BY miner UNION DISTINCT SELECT miner FROM uncles GROUP BY miner) all_known_miners;"))[0];
+        $totalKnown = cacheResult("totalKnownBlocksAndMiners", 15, function () use ($api){
+            return iterator_to_array($api->getDatabase()->query("SELECT (SELECT COUNT(*) FROM blocks WHERE main_found = 'y') + (SELECT COUNT(*) FROM uncles WHERE main_found = 'y') as found, COUNT(*) as miners FROM (SELECT miner FROM blocks GROUP BY miner UNION DISTINCT SELECT miner FROM uncles GROUP BY miner) all_known_miners;"))[0];
+        });
 
 
         $poolBlocks = $api->getPoolBlocks();

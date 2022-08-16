@@ -438,6 +438,8 @@ $server->listen($socket);
 
 Loop::get()->run();
 
+$apiCache = [];
+
 /**
  * @param string $method
  * @param int $cacheTime
@@ -445,16 +447,17 @@ Loop::get()->run();
  */
 function getFromAPI(string $method, int $cacheTime = 0): PromiseInterface {
     global $client;
-    static $cache = [];
+    global $apiCache;
 
-    if($cacheTime > 0 and isset($cache[$method]) and ($cache[$method][0] + $cacheTime) >= time()){
-        $v = $cache[$method][1];
+    if($cacheTime > 0 and isset($apiCache[$method]) and ($apiCache[$method][0] + $cacheTime) >= time()){
+        $v = $apiCache[$method][1];
         return new Promise(function ($resolve, $reject) use ($v){
             $resolve($v);
         });
     }
 
-    return $client->get("http://api:8080/api/$method")->then(function (ResponseInterface $response) use($cacheTime, $cache, $method){
+    return $client->get("http://api:8080/api/$method")->then(function (ResponseInterface $response) use($cacheTime, $method){
+        global $apiCache;
         if ($response->getStatusCode() === 200) {
             if (count($response->getHeader("content-type")) > 0 and stripos($response->getHeader("content-type")[0], "/json") !== false) {
                 $result = json_decode($response->getBody()->getContents());
@@ -463,7 +466,7 @@ function getFromAPI(string $method, int $cacheTime = 0): PromiseInterface {
             }
 
             if($cacheTime > 0){
-                $cache[$method] = [time(), $result];
+                $apiCache[$method] = [time(), $result];
             }
             return $result;
         } else {
