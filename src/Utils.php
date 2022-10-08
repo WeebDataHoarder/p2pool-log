@@ -122,9 +122,7 @@ class Utils {
     }
 
     static function encodeHexBinaryNumber(string $i): string {
-        $v = gmp_strval(gmp_init($i, 16), 62);
-
-        return strlen($v) >= strlen((string) $i) ? (string) $i : (preg_match("#^[0-9a-f]+$#", $v) > 0 ? ".$v" : $v);
+        return $i;
     }
 
     static function decodeBinaryNumber(string $i): int {

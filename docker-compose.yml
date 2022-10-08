@@ -45,27 +45,23 @@ services:
       - 8189:80
 
   api:
-    build:
-      context: ./
-      dockerfile: docker/php/Dockerfile
+    image: golang:1.19-alpine
     restart: always
     environment:
       - MONEROD_RPC_URL=${MONEROD_RPC_URL}
+      - API_FOLDER=/api
     depends_on:
       - db
       - scraper
-    read_only: true
     security_opt:
       - no-new-privileges:true
     volumes:
       - cache:/cache:rw
       - "${API_FOLDER}:/api:ro"
-    tmpfs:
-      - /tmp
     networks:
       - p2pool-log
     command: >-
-      php /app/src/api.php "host=db port=5432 dbname=p2pool user=p2pool password=p2pool"
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/api@9653b05076f7923abb7aeb2d36e4f9d27055084e "host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
   web:
     build:
       context: ./
@@ -87,26 +83,22 @@ services:
     command: >-
       php /app/src/web.php
   scraper:
-    build:
-      context: ./
-      dockerfile: docker/php/Dockerfile
+    image: golang:1.19-alpine
     restart: always
     environment:
       - MONEROD_RPC_URL=${MONEROD_RPC_URL}
+      - API_FOLDER=/api
     depends_on:
       - db
-    read_only: true
     security_opt:
       - no-new-privileges:true
     volumes:
       - cache:/cache:rw
       - "${API_FOLDER}:/api:ro"
-    tmpfs:
-      - /tmp
     networks:
       - p2pool-log
     command: >-
-      php /app/src/daemon.php "host=db port=5432 dbname=p2pool user=p2pool password=p2pool"
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/daemon@9653b05076f7923abb7aeb2d36e4f9d27055084e "host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
   bot:
     build:
       context: ./
@@ -144,7 +136,7 @@ services:
     image: postgres:13.7
     restart: always
     read_only: true
-    shm_size: 1gb
+    shm_size: 4gb
     security_opt:
       - no-new-privileges:true
     environment:
@@ -156,7 +148,15 @@ services:
       - "-c"
       - "max_connections=1000"
       - "-c"
-      - "shared_buffers=2GB"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "work_mem=64MB"
+      - "-c"
+      - "temp_buffers=64MB"
+      - "-c"
+      - "hash_mem_multiplier=2.0"
+    ports:
+      - "5432:5432"
     networks:
       - p2pool-log
     healthcheck:

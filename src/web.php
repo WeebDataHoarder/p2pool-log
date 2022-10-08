@@ -191,7 +191,7 @@ $server = new HttpServer(function (ServerRequestInterface $request){
 
         return new Promise(function ($resolve, $reject) use($headers) {
             getFromAPI("pool_info", 5)->then(function ($pool_info) use ($resolve, $headers) {
-                getFromAPI("shares?onlyBlocks&limit=" . SIDECHAIN_PPLNS_WINDOW, 30)->then(function ($shares) use ($resolve, $pool_info, $headers) {
+                getFromAPI("shares?limit=" . SIDECHAIN_PPLNS_WINDOW . "&onlyBlocks", 30)->then(function ($shares) use ($resolve, $pool_info, $headers) {
                     $miners = [];
 
                     $wsize = SIDECHAIN_PPLNS_WINDOW;
