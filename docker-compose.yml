@@ -155,8 +155,6 @@ services:
       - "temp_buffers=64MB"
       - "-c"
       - "hash_mem_multiplier=2.0"
-    ports:
-      - "5432:5432"
     networks:
       - p2pool-log
     healthcheck:
