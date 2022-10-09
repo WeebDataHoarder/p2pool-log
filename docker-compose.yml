@@ -61,7 +61,7 @@ services:
     networks:
       - p2pool-log
     command: >-
-      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/api@9653b05076f7923abb7aeb2d36e4f9d27055084e "host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/api@dc8b2ab2a42c9b9f07e14291ebd2f96cfe43b590 "host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
   web:
     build:
       context: ./
@@ -98,7 +98,7 @@ services:
     networks:
       - p2pool-log
     command: >-
-      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/daemon@9653b05076f7923abb7aeb2d36e4f9d27055084e "host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/daemon@dc8b2ab2a42c9b9f07e14291ebd2f96cfe43b590 "host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
   bot:
     build:
       context: ./
