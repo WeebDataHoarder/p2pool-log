@@ -61,27 +61,23 @@ services:
     networks:
       - p2pool-log
     command: >-
-      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/api@dc8b2ab2a42c9b9f07e14291ebd2f96cfe43b590 "host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/api@ec110299b215cf92759d5b2cab0b7421c1d7fd79 "host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
   web:
-    build:
-      context: ./
-      dockerfile: docker/php/Dockerfile
+    image: golang:1.19-alpine
     restart: always
     environment:
       - MONEROD_RPC_URL=${MONEROD_RPC_URL}
       - TOR_SERVICE_ADDRESS=${TOR_SERVICE_ADDRESS}
       - NET_SERVICE_ADDRESS=${NET_SERVICE_ADDRESS}
+      - API_URL=http://api:8080/api/
     depends_on:
       - api
-    read_only: true
     security_opt:
       - no-new-privileges:true
-    tmpfs:
-      - /tmp
     networks:
       - p2pool-log
     command: >-
-      php /app/src/web.php
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/web@ec110299b215cf92759d5b2cab0b7421c1d7fd79
   scraper:
     image: golang:1.19-alpine
     restart: always
@@ -98,7 +94,7 @@ services:
     networks:
       - p2pool-log
     command: >-
-      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/daemon@dc8b2ab2a42c9b9f07e14291ebd2f96cfe43b590 "host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/daemon@ec110299b215cf92759d5b2cab0b7421c1d7fd79 "host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
   bot:
     build:
       context: ./
