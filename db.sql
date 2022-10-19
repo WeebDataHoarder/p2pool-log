@@ -1,6 +1,7 @@
 
 CREATE TABLE miners (
     id bigserial PRIMARY KEY,
+    alias varchar UNIQUE DEFAULT NULL,
     address varchar UNIQUE NOT NULL
 );
 
