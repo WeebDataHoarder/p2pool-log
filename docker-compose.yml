@@ -66,7 +66,7 @@ services:
   web:
     build:
       context: ./docker/golang
-      dockerfile: docker/golang/Dockerfile
+      dockerfile: Dockerfile
     restart: always
     environment:
       - MONEROD_RPC_URL=${MONEROD_RPC_URL}
@@ -85,7 +85,7 @@ services:
   scraper:
     build:
       context: ./docker/golang
-      dockerfile: docker/golang/Dockerfile
+      dockerfile: Dockerfile
     restart: always
     environment:
       - MONEROD_RPC_URL=${MONEROD_RPC_URL}
@@ -104,7 +104,7 @@ services:
   bot:
     build:
       context: ./
-      dockerfile: docker/php/Dockerfile
+      dockerfile: Dockerfile
     restart: always
     environment:
       - IRC_SERVER_HOST=${IRC_SERVER_HOST}
