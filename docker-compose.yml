@@ -62,7 +62,7 @@ services:
     networks:
       - p2pool-log
     command: >-
-      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/api@9c6603abb2f294e744f0d3970103d980e0d43c64 "host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/api@31fdbf9325beca38085b16f316287c7b09b5e6dc "host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
   web:
     build:
       context: ./docker/golang
@@ -81,7 +81,7 @@ services:
     networks:
       - p2pool-log
     command: >-
-      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/web@9c6603abb2f294e744f0d3970103d980e0d43c64
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/web@31fdbf9325beca38085b16f316287c7b09b5e6dc
   scraper:
     build:
       context: ./docker/golang
@@ -100,7 +100,7 @@ services:
     networks:
       - p2pool-log
     command: >-
-      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/daemon@9c6603abb2f294e744f0d3970103d980e0d43c64 -db="host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/daemon@31fdbf9325beca38085b16f316287c7b09b5e6dc -db="host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
   bot:
     build:
       context: ./
