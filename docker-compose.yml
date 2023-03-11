@@ -45,6 +45,7 @@ services:
 
   api:
     build:
+      context: ./docker/golang
       dockerfile: docker/golang/Dockerfile
     restart: always
     environment:
@@ -64,6 +65,7 @@ services:
       go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/api@9c6603abb2f294e744f0d3970103d980e0d43c64 "host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
   web:
     build:
+      context: ./docker/golang
       dockerfile: docker/golang/Dockerfile
     restart: always
     environment:
@@ -82,6 +84,7 @@ services:
       go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/web@9c6603abb2f294e744f0d3970103d980e0d43c64
   scraper:
     build:
+      context: ./docker/golang
       dockerfile: docker/golang/Dockerfile
     restart: always
     environment:
