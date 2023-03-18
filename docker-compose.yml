@@ -9,6 +9,8 @@ volumes:
     external: false
   cache:
     external: false
+  p2pool:
+    external: false
 
 services:
   tor:
@@ -42,7 +44,22 @@ services:
       - p2pool-log
     ports:
       - 8189:80
-
+  p2pool:
+    build:
+      context: ./docker/golang
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      - db
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - p2pool:/data:rw
+    networks:
+      - p2pool-log
+    working_dir: /data
+    command: >-
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/p2pool@efe6ed6bedad54a643d9bf1c489ad55e86993d30 -out-peers 64 -host ${MONEROD_NODE} -p2p 127.0.0.1:39889 -api-bind '0.0.0.0:3131' -archive /data/archive.db
   api:
     build:
       context: ./docker/golang
@@ -50,6 +67,7 @@ services:
     restart: always
     environment:
       - MONEROD_RPC_URL=${MONEROD_RPC_URL}
+      - TOR_SERVICE_ADDRESS=${TOR_SERVICE_ADDRESS}
       - API_FOLDER=/api
     depends_on:
       - db
@@ -62,7 +80,7 @@ services:
     networks:
       - p2pool-log
     command: >-
-      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/api@8ee16e6d5326adb2b5e52457892ab06dd4f8c6ec "host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/api@efe6ed6bedad54a643d9bf1c489ad55e86993d30 -api-host "http://p2pool:3131" -db="host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
   web:
     build:
       context: ./docker/golang
@@ -81,7 +99,7 @@ services:
     networks:
       - p2pool-log
     command: >-
-      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/web@8ee16e6d5326adb2b5e52457892ab06dd4f8c6ec
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/web@efe6ed6bedad54a643d9bf1c489ad55e86993d30
   scraper:
     build:
       context: ./docker/golang
@@ -100,7 +118,7 @@ services:
     networks:
       - p2pool-log
     command: >-
-      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/daemon@8ee16e6d5326adb2b5e52457892ab06dd4f8c6ec -db="host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/daemon@efe6ed6bedad54a643d9bf1c489ad55e86993d30 -api-host "http://p2pool:3131" -db="host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
   bot:
     build:
       context: ./
