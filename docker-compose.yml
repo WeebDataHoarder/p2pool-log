@@ -43,7 +43,7 @@ services:
     networks:
       - p2pool-log
     ports:
-      - 8189:80
+      - ${SITE_PORT}:80
   p2pool:
     build:
       context: ./docker/golang
@@ -59,7 +59,7 @@ services:
       - p2pool-log
     working_dir: /data
     command: >-
-      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/p2pool@efe6ed6bedad54a643d9bf1c489ad55e86993d30 -out-peers 64 -host ${MONEROD_NODE} -p2p 127.0.0.1:39889 -api-bind '0.0.0.0:3131' -archive /data/archive.db
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/p2pool@829d21a7a2481b89787a464a14ae0061e58c4f85 -out-peers 64 -host ${MONEROD_NODE} -p2p 127.0.0.1:39889 -api-bind '0.0.0.0:3131' -archive /data/archive.db
   api:
     build:
       context: ./docker/golang
@@ -80,7 +80,7 @@ services:
     networks:
       - p2pool-log
     command: >-
-      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/api@efe6ed6bedad54a643d9bf1c489ad55e86993d30 -api-host "http://p2pool:3131" -db="host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/api@829d21a7a2481b89787a464a14ae0061e58c4f85 -api-host "http://p2pool:3131" -db="host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
   web:
     build:
       context: ./docker/golang
@@ -99,7 +99,7 @@ services:
     networks:
       - p2pool-log
     command: >-
-      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/web@efe6ed6bedad54a643d9bf1c489ad55e86993d30
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/web@829d21a7a2481b89787a464a14ae0061e58c4f85
   scraper:
     build:
       context: ./docker/golang
@@ -118,7 +118,7 @@ services:
     networks:
       - p2pool-log
     command: >-
-      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/daemon@efe6ed6bedad54a643d9bf1c489ad55e86993d30 -api-host "http://p2pool:3131" -db="host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/daemon@829d21a7a2481b89787a464a14ae0061e58c4f85 -api-host "http://p2pool:3131" -db="host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
   bot:
     build:
       context: ./
