@@ -59,7 +59,7 @@ services:
       - p2pool-log
     working_dir: /data
     command: >-
-      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/p2pool@3ec6e36a1298998e5f0f93f69d6be9573a256ac0 -out-peers 24 -host ${MONEROD_NODE} -p2p 127.0.0.1:39889 -api-bind '0.0.0.0:3131' -archive /data/archive.db ${EXTRA_P2POOL_ARGS}
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/p2pool@239f135fcdca0d48c3976437d72944f218563d97 -out-peers 24 -host ${MONEROD_NODE} -p2p 127.0.0.1:39889 -api-bind '0.0.0.0:3131' -archive /data/archive.db ${EXTRA_P2POOL_ARGS}
   api:
     build:
       context: ./docker/golang
@@ -80,7 +80,7 @@ services:
     networks:
       - p2pool-log
     command: >-
-      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/api@3ec6e36a1298998e5f0f93f69d6be9573a256ac0 -api-host "http://p2pool:3131" -db="host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/api@239f135fcdca0d48c3976437d72944f218563d97 -api-host "http://p2pool:3131" -db="host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
   web:
     build:
       context: ./docker/golang
@@ -99,7 +99,7 @@ services:
     networks:
       - p2pool-log
     command: >-
-      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/web@3ec6e36a1298998e5f0f93f69d6be9573a256ac0
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/web@239f135fcdca0d48c3976437d72944f218563d97
   scraper:
     build:
       context: ./docker/golang
@@ -118,7 +118,7 @@ services:
     networks:
       - p2pool-log
     command: >-
-      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/daemon@3ec6e36a1298998e5f0f93f69d6be9573a256ac0 -api-host "http://p2pool:3131" -db="host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/daemon@239f135fcdca0d48c3976437d72944f218563d97 -api-host "http://p2pool:3131" -db="host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
 #  bot:
 #    build:
 #      context: ./
