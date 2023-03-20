@@ -59,7 +59,7 @@ services:
       - p2pool-log
     working_dir: /data
     command: >-
-      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/p2pool@829d21a7a2481b89787a464a14ae0061e58c4f85 -out-peers 64 -host ${MONEROD_NODE} -p2p 127.0.0.1:39889 -api-bind '0.0.0.0:3131' -archive /data/archive.db
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/p2pool@faacd347a02c9649a0fc5fbb1dbc5c031cf2a11b -out-peers 24 -host ${MONEROD_NODE} -p2p 127.0.0.1:39889 -api-bind '0.0.0.0:3131' -archive /data/archive.db ${EXTRA_P2POOL_ARGS}
   api:
     build:
       context: ./docker/golang
@@ -80,7 +80,7 @@ services:
     networks:
       - p2pool-log
     command: >-
-      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/api@829d21a7a2481b89787a464a14ae0061e58c4f85 -api-host "http://p2pool:3131" -db="host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/api@faacd347a02c9649a0fc5fbb1dbc5c031cf2a11b -api-host "http://p2pool:3131" -db="host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
   web:
     build:
       context: ./docker/golang
@@ -99,7 +99,7 @@ services:
     networks:
       - p2pool-log
     command: >-
-      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/web@829d21a7a2481b89787a464a14ae0061e58c4f85
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/web@faacd347a02c9649a0fc5fbb1dbc5c031cf2a11b
   scraper:
     build:
       context: ./docker/golang
@@ -118,40 +118,40 @@ services:
     networks:
       - p2pool-log
     command: >-
-      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/daemon@829d21a7a2481b89787a464a14ae0061e58c4f85 -api-host "http://p2pool:3131" -db="host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
-  bot:
-    build:
-      context: ./
-      dockerfile: docker/php/Dockerfile
-    restart: always
-    environment:
-      - IRC_SERVER_HOST=${IRC_SERVER_HOST}
-      - IRC_SERVER_PORT=${IRC_SERVER_PORT}
-      - IRC_SERVER_PASS=${IRC_SERVER_PASS}
-      - BOT_USER=${BOT_USER}
-      - BOT_NICK=${BOT_NICK}
-      - BOT_PASSWORD=${BOT_PASSWORD}
-      - BOT_COMMANDS_CHANNEL=${BOT_COMMANDS_CHANNEL}
-      - BOT_BLOCKS_FOUND_CHANNEL=${BOT_BLOCKS_FOUND_CHANNEL}
-      - MONEROD_RPC_URL=${MONEROD_RPC_URL}
-      - TOR_SERVICE_ADDRESS=${TOR_SERVICE_ADDRESS}
-      - NET_SERVICE_ADDRESS=${NET_SERVICE_ADDRESS}
-    depends_on:
-      - db
-      - tor
-      - scraper
-    read_only: true
-    security_opt:
-      - no-new-privileges:true
-    volumes:
-      - cache:/cache:rw
-      - "${API_FOLDER}:/api:ro"
-    tmpfs:
-      - /tmp
-    networks:
-      - p2pool-log
-    command: >-
-      php /app/src/bot.php "host=db port=5432 dbname=p2pool user=p2pool password=p2pool"
+      go run git.gammaspectra.live/P2Pool/p2pool-observer/cmd/daemon@faacd347a02c9649a0fc5fbb1dbc5c031cf2a11b -api-host "http://p2pool:3131" -db="host=db port=5432 dbname=p2pool user=p2pool password=p2pool sslmode=disable"
+#  bot:
+#    build:
+#      context: ./
+#      dockerfile: docker/php/Dockerfile
+#    restart: always
+#    environment:
+#      - IRC_SERVER_HOST=${IRC_SERVER_HOST}
+#      - IRC_SERVER_PORT=${IRC_SERVER_PORT}
+#      - IRC_SERVER_PASS=${IRC_SERVER_PASS}
+#      - BOT_USER=${BOT_USER}
+#      - BOT_NICK=${BOT_NICK}
+#      - BOT_PASSWORD=${BOT_PASSWORD}
+#      - BOT_COMMANDS_CHANNEL=${BOT_COMMANDS_CHANNEL}
+#      - BOT_BLOCKS_FOUND_CHANNEL=${BOT_BLOCKS_FOUND_CHANNEL}
+#      - MONEROD_RPC_URL=${MONEROD_RPC_URL}
+#      - TOR_SERVICE_ADDRESS=${TOR_SERVICE_ADDRESS}
+#      - NET_SERVICE_ADDRESS=${NET_SERVICE_ADDRESS}
+#    depends_on:
+#      - db
+#      - tor
+#      - scraper
+#    read_only: true
+#    security_opt:
+#      - no-new-privileges:true
+#    volumes:
+#      - cache:/cache:rw
+#      - "${API_FOLDER}:/api:ro"
+#    tmpfs:
+#      - /tmp
+#    networks:
+#      - p2pool-log
+#    command: >-
+#      php /app/src/bot.php "host=db port=5432 dbname=p2pool user=p2pool password=p2pool"
   db:
     image: postgres:13.7
     restart: always
